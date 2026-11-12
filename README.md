@@ -51,7 +51,7 @@ DOOM、DOOM II、Freedoom 都一樣：
 ## 相容性與注意事項
 
 - 玩 DOOM 的時候，其他 mod 的快捷鍵也可能暫時不動作。
-- 遊戲的中文只有簡體，設定的中文也是簡體字；裝了[繁體中文 mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3828909380) 會變成繁體。
+- 遊戲的中文只有簡體，這個 mod 的介面也是簡體字；裝了[繁體中文 mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3828909380) 會變成繁體。DOOM 本身的文字是英文，不會翻譯。
 - 換 WAD、改解析度要重開遊戲才生效。DOOM 的存檔每個 WAD 分開放。
 - 滑鼠只能開火，不能轉向。
 - Alt 鍵不會傳給 DOOM（免得按到 Alt+F4 關掉遊戲），所以側移用 A、D。
