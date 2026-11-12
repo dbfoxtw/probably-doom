@@ -29,18 +29,34 @@ namespace ProbablyDoom
     ///
     /// 拖曳與滾輪接住、什麼都不做：沒接的話 EventSystem 會往上找到 UIDragHandler（從 Doom 畫面拖就拖動整個視窗）
     /// 或列表的 ScrollRect（捲動藏在後面的列表）。拖動視窗照樣用標題列（上緣、客人名字那一帶）。
+    ///
+    /// 左鍵另外記一個幀數（LeftDownFrame）：在 Doom 畫面上按著左鍵開火（需求.md 決定 26，規則在 MouseFire）。
+    /// 其他鍵照樣算「點了 Doom 畫面」（拿焦點、轉給視窗），只是不開火。
     /// </summary>
     sealed class ScreenInput : MonoBehaviour, IPointerDownHandler, IScrollHandler,
         IInitializePotentialDragHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         /// <summary>最近一次在 Doom 畫面上按下滑鼠的 Time.frameCount。</summary>
         internal int PointerDownFrame = -1;
+        /// <summary>最近一次在 Doom 畫面上按下滑鼠**左鍵**的 Time.frameCount（滑鼠開火用）。</summary>
+        internal int LeftDownFrame = -1;
 
         bool _forwardFailed;
 
         public void OnPointerDown(PointerEventData eventData)
         {
             PointerDownFrame = Time.frameCount;
+            if (eventData.button == PointerEventData.InputButton.Left) LeftDownFrame = Time.frameCount;
+            ForwardToWindow(eventData);
+        }
+
+        /// <summary>
+        /// 把按下轉給交易面板的視窗（父層往上第一個按下處理者，UIDragHandler）：視窗被拉到最上層、Esc 關它。
+        /// Doom 畫面區上的「複製路徑」按鈕也用這個（ButtonPointerForward）：從畫面區的父層開始找，跳過我們自己，
+        /// 所以按按鈕不算「點了 Doom 畫面」（不會重新找 WAD），視窗照樣被拉到最上層。
+        /// </summary>
+        internal void ForwardToWindow(PointerEventData eventData)
+        {
             try
             {
                 var parent = transform.parent;
@@ -64,5 +80,21 @@ namespace ProbablyDoom
         public void OnDrag(PointerEventData eventData) { }
 
         public void OnEndDrag(PointerEventData eventData) { }
+    }
+
+    /// <summary>
+    /// 掛在 Doom 畫面區裡的「複製路徑」按鈕上（需求.md 決定 29）。EventSystem 把按下交給按鈕（Selectable 的 OnPointerDown），
+    /// 黑底的 ScreenInput 就收不到：這一下不算「點了 Doom 畫面」（不重新找 WAD、不拿焦點），這正是要的。
+    /// 可是視窗的 UIDragHandler 也收不到，視窗不會被拉到最上層；所以這裡（同一個物件上的另一個按下處理者，EventSystem 兩個都會叫）
+    /// 交給 ScreenInput.ForwardToWindow 從畫面區的父層往上轉，效果和點列表本身一樣。
+    /// </summary>
+    sealed class ButtonPointerForward : MonoBehaviour, IPointerDownHandler
+    {
+        internal ScreenInput Screen;
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (Screen != null) Screen.ForwardToWindow(eventData);
+        }
     }
 }

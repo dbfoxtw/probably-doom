@@ -41,7 +41,7 @@ namespace ProbablyDoom
 
         /// <summary>Doom 的畫面（Width×Height，Unity 的排法）；交易面板的 RawImage 顯示它。Running 之後才有。</summary>
         internal Texture2D Screen { get; private set; }
-        /// <summary>平板本體的小畫面（78×55）。Running 之後才有。</summary>
+        /// <summary>平板本體的小畫面（79×55，RGBA32：支架與陰影線的格子是透明的）。Running 之後才有。</summary>
         internal Texture2D Thumb { get; private set; }
 
         CommandLineArgs _args;
@@ -52,9 +52,12 @@ namespace ProbablyDoom
         UnitySound _sound;
         UnityMusic _music;
         UnityKeyboard _keyboard;
+        DoomKeyboard _keys;
         readonly TicClock _clock = new TicClock();
 
         uint[] _raw, _rows, _thumb;
+        /// <summary>小畫面裡要透明的格子（TabletGeometry.TransparentIndices，建 Doom 時算一次）。</summary>
+        int[] _thumbMask;
         bool _quit;
         int _ticsSinceThumb;
         /// <summary>音樂有沒有建起來、沒有的話為什麼（「開始 Doom」那行 log 用）。</summary>
@@ -115,6 +118,20 @@ namespace ProbablyDoom
             return DataPaths.Display(DataFolder(), home);
         }
 
+        /// <summary>
+        /// 出錯畫面的路徑框：Player.log 的位置（Application.consoleLogPath），寫法同 <see cref="DisplayFolder"/>（%USERPROFILE% 開頭）。
+        /// 拿不到時回傳空字串（畫面只寫 Player.log、不顯示複製按鈕）。
+        /// </summary>
+        internal static string DisplayLogFile()
+        {
+            string log, home;
+            try { log = Application.consoleLogPath; }
+            catch { log = null; }
+            try { home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile); }
+            catch { home = null; }
+            return DataPaths.Display(log, home);
+        }
+
         void Start(GameObject host, string wad)
         {
             var id = ProbablyDoomMod.ModId;
@@ -133,9 +150,9 @@ namespace ProbablyDoom
             _sound = new UnitySound(_config, _content, host);
             _music = StartMusic(id, host);
 
-            var keys = new DoomKeyboard(_config);
-            _keyboard = new UnityKeyboard(keys);
-            _doom = new DoomInstance(_args, _config, _content, _video, _sound, _music, keys, new ModDataSaveStore(wad));
+            _keys = new DoomKeyboard(_config);
+            _keyboard = new UnityKeyboard(_keys);
+            _doom = new DoomInstance(_args, _config, _content, _video, _sound, _music, _keys, new ModDataSaveStore(wad));
             _doom.QuitRequested += () => _quit = true;
 
             var w = _video.Width;
@@ -143,6 +160,7 @@ namespace ProbablyDoom
             _raw = new uint[w * h];
             _rows = new uint[w * h];
             _thumb = new uint[ThumbW * ThumbH];
+            _thumbMask = TabletGeometry.TransparentIndices();
             Screen = NewTexture(w, h, "ProbablyDoom.Screen");
             Thumb = NewTexture(ThumbW, ThumbH, "ProbablyDoom.Thumb");
 
@@ -222,14 +240,16 @@ namespace ProbablyDoom
 
         /// <summary>
         /// 有焦點時每幀呼叫：讀鍵盤、照經過的時間跑 tic（35 Hz）、有跑才重畫一次（不插值，每個 tic 一格）並上傳貼圖；
-        /// thumb＝平板本體的小畫面要不要更新（每兩個 tic 一次）。回傳 true＝玩家在 Doom 選單選了 Quit Game（決定 20）。
+        /// thumb＝平板本體的小畫面要不要更新（每兩個 tic 一次）；mouseHeld／mousePressed＝滑鼠左鍵開火（MouseFire，決定 26）。
+        /// 回傳 true＝玩家在 Doom 選單選了 Quit Game（決定 20）。
         /// </summary>
-        internal bool Tick(double seconds, bool thumb)
+        internal bool Tick(double seconds, bool thumb, bool mouseHeld, bool mousePressed)
         {
             if (Status != State.Running) return false;
             try
             {
                 _keyboard.Poll(_doom);
+                _keys.SetMouse1(mouseHeld, mousePressed);
                 var n = _clock.Advance(seconds);
                 for (var i = 0; i < n; i++)
                 {
@@ -243,6 +263,7 @@ namespace ProbablyDoom
                 }
                 if (n > 0)
                 {
+                    _keys.TicsRan(); // 按下的鎖存至少跑過一個 tic 了
                     _ticsSinceThumb += n;
                     var doThumb = thumb && _ticsSinceThumb >= 2;
                     if (doThumb) _ticsSinceThumb = 0;
@@ -273,6 +294,7 @@ namespace ProbablyDoom
             if (thumb)
             {
                 FrameConvert.Thumbnail(_raw, w, h, _thumb, ThumbW, ThumbH);
+                FrameConvert.ClearPixels(_thumb, _thumbMask); // 支架與陰影線露出原圖（決定 28）
                 Thumb.SetPixelData(_thumb, 0);
                 Thumb.Apply(false);
             }

@@ -121,7 +121,7 @@ namespace ProbablyDoom
         internal const string SaveFolderUnderProfile = @"\AppData\LocalLow\Questing Goose Studio\Probably Stolen";
 
         /// <summary>
-        /// 顯示給玩家看的資料夾路徑（沒有 WAD 時的說明）：
+        /// 顯示給玩家看的路徑（沒有 WAD 時的 ModData 資料夾、出錯時的 Player.log 檔案，需求.md 決定 29；log 裡也用這個寫法）：
         /// - Application.persistentDataPath 在 Windows 用 /，Path.Combine 接上的部分用 \，混在一起不好看，統一成 \。
         /// - 開頭是「使用者資料夾\AppData\LocalLow\Questing Goose Studio\Probably Stolen」時，使用者資料夾換成 %USERPROFILE%：
         ///   截圖時不露出 Windows 的使用者名稱，整串貼進檔案總管的網址列也打得開（使用者 2026-11-12 定）。

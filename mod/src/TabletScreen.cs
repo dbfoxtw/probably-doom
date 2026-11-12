@@ -16,10 +16,12 @@ namespace ProbablyDoom
     using UnityEngine;
 
     /// <summary>
-    /// 平板本體（店裡右邊桌上那台，場景的 NegociationTablet，掛 StoreTablet）螢幕上的小畫面（需求.md 決定 6～8）。
-    /// 平板是一張 960×540 的整張圖層（SpriteRenderer，排序 10、沒有子物件），螢幕在圖上 78×55 遊戲像素的地方（TabletGeometry）。
-    /// 加一個子物件掛 SpriteRenderer：同一個排序圖層、順序比本體大 1、同一個材質（燈光跟著場景），sprite 是 78×55 的貼圖
+    /// 平板本體（店裡右邊桌上那台，場景的 NegociationTablet，掛 StoreTablet）螢幕上的小畫面（需求.md 決定 6～8、28）。
+    /// 平板是一張 960×540 的整張圖層（SpriteRenderer，排序 10、沒有子物件），螢幕在圖上 79×55 遊戲像素的地方（TabletGeometry）。
+    /// 加一個子物件掛 SpriteRenderer：同一個排序圖層、順序比本體大 1、同一個材質（燈光跟著場景），sprite 是 79×55 的貼圖
     /// （DoomSession.Thumb，Point），每像素單位和本體一樣，所以一格對一格蓋在原本的「Useful info」上。
+    /// 貼圖是 RGBA32，下緣兩角的支架與橘色陰影線那些格是透明的（alpha 0），露出原圖（決定 28）：本體的材質本來就畫透明的圖層
+    /// （整張 960×540 大部分是透明的），所以用同一個材質就有 alpha 混合。
     /// 子物件沒有 Collider：遊戲判斷點到店裡的東西靠 EventSystem 對 Collider2D 的射線（Interactable 的 pointer 事件；
     /// 平板本體有兩個 BoxCollider2D），所以小畫面不影響點平板、平板的提示框。
     /// 只在「正在玩」（Doom 模式＋有焦點）時顯示，其他時候隱藏，螢幕回到原本的畫面（決定 8）。設定關掉時完全不建（決定 7）。

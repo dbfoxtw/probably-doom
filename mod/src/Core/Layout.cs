@@ -118,17 +118,69 @@ namespace ProbablyDoom
     }
 
     /// <summary>
-    /// 平板本體（店裡右邊桌上那台，場景的 NegociationTablet）的螢幕位置（需求.md 決定 6）。不碰 Unity，離線測試測同一份。
+    /// 平板本體（店裡右邊桌上那台，場景的 NegociationTablet）的螢幕位置與形狀（需求.md 決定 6、28）。不碰 Unity，離線測試測同一份。
     /// 平板的圖是一整張 960×540 的圖層 negociation_tablet（pivot 中心、100 像素一單位），
-    /// 螢幕在圖上（左上角為原點）(676,183)～(754,238)，78×55 遊戲像素（平常畫著 Useful info）。
+    /// 螢幕在圖上（左上角為原點、含端點）x＝675～753、y＝183～237，79×55 遊戲像素（平常畫著 Useful info）。
+    ///
+    /// 小畫面蓋住整個 79×55，但有 336 格透明（alpha 0），讓原圖露出來（決定 28；形狀是 2026-11-12 從 sharedassets1.assets 的
+    /// negociation_tablet 量的，評估報告.md「平板與交易面板（玩 Doom 的地方）」）：
+    /// - 下緣兩角夾住螢幕的支架（從 y＝221 起斜切 6 列，之後到底；兩邊合計 225 格）：不是螢幕，蓋掉的話支架會不見。
+    /// - 橘色的內陰影線（螢幕凹進外殼的感覺；111 格）：x＝675 的 y＝183～220、y＝183 的 x＝682～743、x＝682 的 y＝227～237。
+    /// 形狀寫成常數，不在執行時讀遊戲的圖（貼圖不可讀）。
     /// </summary>
     internal static class TabletGeometry
     {
-        internal const int ScreenX = 676, ScreenY = 183, ScreenW = 78, ScreenH = 55;
+        internal const int ScreenX = 675, ScreenY = 183, ScreenW = 79, ScreenH = 55;
+
+        /// <summary>支架斜切的第一列（y）；這一列到 <see cref="BracketFullRow"/>-1 每列往內多 1 格，之後到底都一樣寬。</summary>
+        const int BracketTopRow = 221, BracketFullRow = 226;
+        /// <summary>左下支架在 y＝221 時的右緣（x），之後每列 +1，y≥226 時是 681。</summary>
+        const int LeftBracketRightAtTop = 676;
+        /// <summary>右下支架在 y＝221 時的左緣（x），之後每列 -1，y≥226 時是 746。</summary>
+        const int RightBracketLeftAtTop = 751;
+
+        /// <summary>
+        /// 平板圖上的 (x, y)（左上角原點）在小畫面裡要不要透明：下緣兩角的支架、橘色的內陰影線。螢幕範圍以外一律回傳 false。
+        /// </summary>
+        internal static bool IsTransparent(int x, int y)
+        {
+            var right = ScreenX + ScreenW - 1;
+            var bottom = ScreenY + ScreenH - 1;
+            if (x < ScreenX || x > right || y < ScreenY || y > bottom) return false;
+            // 下緣兩角的支架
+            if (y >= BracketTopRow)
+            {
+                var step = System.Math.Min(y, BracketFullRow) - BracketTopRow;
+                if (x <= LeftBracketRightAtTop + step) return true;
+                if (x >= RightBracketLeftAtTop - step) return true;
+            }
+            // 橘色的內陰影線：左邊一欄（支架以上）、上緣兩個上支架之間那列、左下支架旁那段
+            if (x == ScreenX && y < BracketTopRow) return true;
+            if (y == ScreenY && x >= 682 && x <= 743) return true;
+            if (x == 682 && y >= 227) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 小畫面（ScreenW×ScreenH，Unity 的排法：橫列優先、由下往上）裡透明那些格的索引。建 Doom 時算一次，
+        /// 之後每次縮完小畫面照著清成透明（FrameConvert.ClearPixels，熱路徑不配置記憶體）。
+        /// 平板圖的 (x, y) 在小畫面的第 x-ScreenX 欄、由下往上第 ScreenH-1-(y-ScreenY) 列（Unity 的貼圖由下往上）。
+        /// </summary>
+        internal static int[] TransparentIndices()
+        {
+            var list = new System.Collections.Generic.List<int>();
+            for (var r = 0; r < ScreenH; r++)
+            {
+                var y = ScreenY + (ScreenH - 1 - r);
+                for (var c = 0; c < ScreenW; c++)
+                    if (IsTransparent(ScreenX + c, y)) list.Add(r * ScreenW + c);
+            }
+            return list.ToArray();
+        }
 
         /// <summary>
         /// 螢幕中心在平板物件的本地座標（Unity 單位）：sprite 的 rect 寬高、pivot（像素，左下角為原點，同 Sprite.pivot）、pixelsPerUnit 換算。
-        /// 960×540、pivot (480, 270)、ppu 100 時是 (2.35, 0.595)。
+        /// 960×540、pivot (480, 270)、ppu 100 時是 (2.345, 0.595)；寬 79、高 55 都是奇數，中心在半格上，四邊剛好落在整數像素。
         /// </summary>
         internal static void ScreenCenter(float rectW, float rectH, float pivotX, float pivotY, float ppu, out float x, out float y)
         {
@@ -137,6 +189,82 @@ namespace ProbablyDoom
             var cyFromBottom = rectH - cyFromTop;
             x = (cx - pivotX) / ppu;
             y = (cyFromBottom - pivotY) / ppu;
+        }
+    }
+
+    /// <summary>
+    /// 沒有 WAD 與出錯畫面的版面（需求.md 決定 29）：說明文字、路徑框、「複製路徑」按鈕三件，垂直排、整組在畫面區置中。
+    /// 不碰 Unity，離線測試測同一份；字的高度由宿主用 TMP 量好（GetPreferredValues）再交進來。
+    ///
+    /// 數值是使用者選的示意圖在預設大小的列表區（寬 530 畫布單位）量的。整組一律照這個寬度排（換行的位置固定），
+    /// 畫面區比它小（上面有客人資訊時列表區變矮、TabletUI.LayoutSection）就**整組等比縮小**（一個 localScale），
+    /// 所以三件的字永遠保持同樣的比例，也不會溢出畫面區、疊在一起；不讓三個 TMP 各自 auto-size（會變成大小不一）。
+    /// 面板的三種尺寸（StoreUI.ToggleZoom）是整個視窗縮放，畫布單位不變，不用另外處理。
+    /// </summary>
+    internal static class MessageLayout
+    {
+        /// <summary>排版的基準寬度（預設的列表區寬）。</summary>
+        internal const float RefWidth = 530f;
+        /// <summary>整組四周內縮、三件之間的間距。</summary>
+        internal const float Inset = 16f, Gap = 12f;
+        /// <summary>說明文字的大小：沒有 WAD、出錯（出錯的字少，放大一點）。</summary>
+        internal const float NoWadTextSize = 24f, ErrorTextSize = 28f;
+        /// <summary>路徑框：框裡的字、內距（上下、左右）、邊框寬。</summary>
+        internal const float PathTextSize = 19f, BoxPadV = 8f, BoxPadH = 12f, Border = 2f;
+        /// <summary>按鈕：字、內距（上下、左右）；邊框寬同路徑框。</summary>
+        internal const float ButtonTextSize = 18f, ButtonPadV = 4f, ButtonPadH = 16f;
+
+        /// <summary>說明文字與路徑框的寬（基準寬扣掉左右內縮）。</summary>
+        internal const float ContentWidth = RefWidth - 2 * Inset;
+        /// <summary>路徑框裡的字能用的寬（扣掉邊框與左右內距）。</summary>
+        internal const float PathTextWidth = ContentWidth - 2 * Border - 2 * BoxPadH;
+
+        /// <summary>排好的結果：位置都是從整組的左上角往下量（畫布單位、縮放之前），整組再乘 Scale。</summary>
+        internal struct Result
+        {
+            /// <summary>整組的縮放（0～1；畫面區大小是 0 時是 0）。</summary>
+            internal float Scale;
+            /// <summary>整組縮放之前的寬高。</summary>
+            internal float Width, Height;
+            /// <summary>說明文字：上緣、高。</summary>
+            internal float TextY, TextH;
+            /// <summary>路徑框：上緣、高（寬是 ContentWidth）。</summary>
+            internal float BoxY, BoxH;
+            /// <summary>按鈕：上緣、寬、高（水平置中）；沒有按鈕時寬高是 0。</summary>
+            internal float ButtonY, ButtonW, ButtonH;
+        }
+
+        /// <summary>
+        /// 排版：textH＝說明文字的高（寬 ContentWidth 時）、box＝要不要路徑框、pathH＝框裡路徑的高（寬 PathTextWidth 時）、
+        /// button＝要不要按鈕（有框才有）、labelW／labelH＝按鈕字的寬高（「複製路徑」與「已複製」取寬的那個，按了之後按鈕不會變大小）。
+        /// 縮放＝min(1, 畫面區寬 ÷ 整組寬, 畫面區高 ÷ 整組高)：放得下就照原大小，放不下整組一起縮。
+        /// </summary>
+        internal static Result Compute(float areaW, float areaH, float textH, bool box, float pathH, bool button, float labelW, float labelH)
+        {
+            var r = new Result { Width = RefWidth };
+            var y = Inset;
+            r.TextY = y;
+            r.TextH = textH;
+            y += textH;
+            if (box)
+            {
+                y += Gap;
+                r.BoxY = y;
+                r.BoxH = pathH + 2 * BoxPadV + 2 * Border;
+                y += r.BoxH;
+            }
+            if (box && button)
+            {
+                y += Gap;
+                r.ButtonY = y;
+                r.ButtonW = labelW + 2 * ButtonPadH + 2 * Border;
+                r.ButtonH = labelH + 2 * ButtonPadV + 2 * Border;
+                y += r.ButtonH;
+            }
+            r.Height = y + Inset;
+            if (areaW <= 0 || areaH <= 0) r.Scale = 0f;
+            else r.Scale = System.Math.Min(1f, System.Math.Min(areaW / r.Width, areaH / r.Height));
+            return r;
         }
     }
 }

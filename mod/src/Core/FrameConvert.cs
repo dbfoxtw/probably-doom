@@ -16,7 +16,7 @@ using System;
 namespace ProbablyDoom
 {
     /// <summary>
-    /// 把 Doom 的畫面緩衝轉成 Unity 貼圖要的排法，以及平板本體的 78×55 小畫面（需求.md 決定 1、4、6）。不碰 Unity，離線測試測同一份。
+    /// 把 Doom 的畫面緩衝轉成 Unity 貼圖要的排法，以及平板本體的 79×55 小畫面（需求.md 決定 1、4、6、28）。不碰 Unity，離線測試測同一份。
     ///
     /// 畫素一律用 uint 表示一個 RGBA32 畫素（記憶體裡的位元組順序 R、G、B、A，所以在小端序的 uint 裡是 A&lt;&lt;24 | B&lt;&lt;16 | G&lt;&lt;8 | R）：
     /// 引擎的 byte[] 用 Buffer.BlockCopy 整塊搬進 uint[]，轉完再用 Texture2D.SetPixelData 原樣交給貼圖，一個畫素一次搬 4 bytes。
@@ -28,6 +28,8 @@ namespace ProbablyDoom
     {
         /// <summary>不透明的黑（R=G=B=0、A=255）。</summary>
         internal const uint Black = 0xFF000000u;
+        /// <summary>透明（alpha 0）：平板本體的小畫面上要露出原圖的格子（TabletGeometry.IsTransparent）。</summary>
+        internal const uint Transparent = 0x00000000u;
 
         // Thumbnail 每一欄的累加用：每兩個 tic 縮一次，不要每次 new（熱路徑不配置，免得 GC 在玩的時候頓一下）。
         // 只有主執行緒呼叫（DoomSession.Render；離線測試也是單執行緒），不夠大時才換大的。
@@ -54,7 +56,7 @@ namespace ProbablyDoom
 
         /// <summary>
         /// 縮圖裡 Doom 畫面佔的寬高：Doom 的畫面是 4:3（原版 320×200 的畫素不是正方形，拉成 4:3 顯示），
-        /// 放進 tw×th 時保持 4:3、能多大就多大，剩下的留黑邊（78×55 → 73×55，左右留黑）。
+        /// 放進 tw×th 時保持 4:3、能多大就多大，剩下的留黑邊（79×55 → 73×55，左右各 3 欄黑邊）。
         /// </summary>
         internal static void ContentSize(int tw, int th, out int cw, out int ch)
         {
@@ -138,6 +140,15 @@ namespace ProbablyDoom
                     dst[row * tw + ox + i] = 0xFF000000u | (b << 16) | (g << 8) | r;
                 }
             }
+        }
+
+        /// <summary>
+        /// 把 indices 列的格子清成透明（平板本體的小畫面：支架與橘色陰影線的地方露出原圖，TabletGeometry.TransparentIndices）。
+        /// 每次縮完小畫面都要做（Thumbnail 會把整張塗滿）；只走現成的陣列，不配置記憶體。
+        /// </summary>
+        internal static void ClearPixels(uint[] dst, int[] indices)
+        {
+            for (var i = 0; i < indices.Length; i++) dst[indices[i]] = Transparent;
         }
 
         /// <summary>組一個不透明的畫素（測試與畫面以外的地方用）。</summary>

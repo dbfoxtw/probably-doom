@@ -1,5 +1,6 @@
 ﻿//
 // Probably Doom 修改（2026-11-12）：拿掉讀外部 .deh 檔（File.ReadLines），WAD 裡的 DEHACKED lump 照舊。
+// Probably Doom 修改（2026-11-12）：引擎的訊息（Console.Write／WriteLine）改經過 EngineLog，宿主只在除錯模式寫進 log、帶自己的前綴（Unity 會把 Console 的輸出原樣寫進 Player.log）。
 //
 // Copyright (C) 2019-2020 Nobuaki Tanaka
 //
@@ -49,15 +50,15 @@ namespace ManagedDoom
 
                 try
                 {
-                    Console.Write("Load DeHackEd patch from WAD: ");
+                    EngineLog.Write("Load DeHackEd patch from WAD: ");
 
                     ProcessLines(ReadLines(wad.ReadLump(lump)));
 
-                    Console.WriteLine("OK");
+                    EngineLog.WriteLine("OK");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed");
+                    EngineLog.WriteLine("Failed");
                     throw new Exception("Failed to apply DeHackEd patch!", e);
                 }
             }

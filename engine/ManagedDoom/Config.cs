@@ -1,5 +1,6 @@
 ﻿//
 // Probably Doom 修改（2026-11-12）：設定檔改成宿主讀寫：拿掉 Config(string path)（File.ReadLines）與 Save(string path)（StreamWriter），改成 FromText／ToText 只處理文字，因為遊戲的 mod 掃描不准 mod 自己開檔案。
+// Probably Doom 修改（2026-11-12）：引擎的訊息（Console.Write／WriteLine）改經過 EngineLog，宿主只在除錯模式寫進 log、帶自己的前綴（Unity 會把 Console 的輸出原樣寫進 Player.log）。
 //
 // Copyright (C) 1993-1996 Id Software, Inc.
 // Copyright (C) 2019-2020 Nobuaki Tanaka
@@ -166,7 +167,7 @@ namespace ManagedDoom
         {
             try
             {
-                Console.Write("Restore settings: ");
+                EngineLog.Write("Restore settings: ");
 
                 var dic = new Dictionary<string, string>();
                 foreach (var line in lines)
@@ -211,11 +212,11 @@ namespace ManagedDoom
 
                 isRestoredFromFile = true;
 
-                Console.WriteLine("OK");
+                EngineLog.WriteLine("OK");
             }
             catch
             {
-                Console.WriteLine("Failed");
+                EngineLog.WriteLine("Failed");
             }
         }
 

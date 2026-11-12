@@ -19,8 +19,9 @@ namespace ProbablyDoom
 
     /// <summary>
     /// 每幀的工作（官方的 IMod 沒有每幀的回呼，掛在 Init 建的 DontDestroyOnLoad 物件上）：
-    /// 焦點（FocusRules）、Doom 的 tic 與畫面（DoomSession）、交易面板的 UI（TabletPanel）、平板本體的小畫面（TabletScreen）、
-    /// 音樂的播放與音量、語言、除錯統計。全部在 LateUpdate：EventSystem 在它的 Update 送出「點到 Doom 畫面」，這時已經送完，
+    /// 焦點（FocusRules）、滑鼠左鍵開火（MouseFire）、Doom 的 tic 與畫面（DoomSession）、交易面板的 UI（TabletPanel）、
+    /// 平板本體的小畫面（TabletScreen）、音樂的播放與音量、遊戲背景音樂的靜音（GameMusicMute）、語言、除錯統計。
+    /// 全部在 LateUpdate：EventSystem 在它的 Update 送出「點到 Doom 畫面」，這時已經送完，
     /// 同一幀就看得到；算完的焦點設給 InputBlocker，下一幀遊戲的 Update 就照它擋快捷鍵。
     /// 這裡出錯時同一個錯誤只記一次 log，不丟回遊戲。
     /// </summary>
@@ -29,6 +30,8 @@ namespace ProbablyDoom
         internal static DoomRunner Instance { get; private set; }
 
         readonly DoomSession _session = new DoomSession();
+        readonly MouseFire _mouseFire = new MouseFire();
+        readonly GameMusicMute _musicMute = new GameMusicMute();
 
         TabletPanel _panel;
         TabletScreen _tabletScreen;
@@ -46,7 +49,8 @@ namespace ProbablyDoom
 
         Strings _strings = Strings.En;
         float _nextLangCheck;
-        string _noWadMessage;
+        /// <summary>說明畫面的路徑框（DataPaths.Display 的寫法），第一次要用時才算、之後照用（路徑在遊戲執行中不會變）。</summary>
+        string _noWadPath, _logPath;
 
         float _nextReport;
         int _focusChanges;
@@ -124,9 +128,7 @@ namespace ProbablyDoom
                         ProbablyDoomMod.DebugLog("切回結帳畫面");
                         break;
                 }
-                // 和遊戲的調整大小按鈕一樣的按鍵聲（NegociationUIManager.OnResizeClick）
-                var audio = EmporiumAudioPlayer.Instance;
-                if (audio != null && audio.audioButton1 != null) audio.audioButton1.Play();
+                TabletPanel.PlayButtonSound(); // 和遊戲的調整大小按鈕一樣的按鍵聲
             }
             catch (Exception e) { LogOnce("按 DOOM", e); }
         }
@@ -157,6 +159,7 @@ namespace ProbablyDoom
             _doomMode = keep;
             var shown = panelAlive && _panel.Open && _doomMode;
             var pointerDownOnScreen = panelAlive && _panel.PointerDownThisFrame;
+            var leftDownOnScreen = panelAlive && _panel.LeftDownThisFrame;
 
             // 平板本體還沒找到（交易面板建好時還沒啟用）：每秒再找一次
             if (panelAlive && _storeTablet == null && Time.unscaledTime >= _nextTabletSearch) FindStoreTablet(false);
@@ -177,12 +180,19 @@ namespace ProbablyDoom
                 PointerDownOnScreen = pointerDownOnScreen,
                 AppFocused = Application.isFocused,
             };
+            // 滑鼠開火看「按下時已經有焦點」：用這一幀算焦點之前的值（拿焦點的那一下不開火，MouseFire）
+            var focusedBefore = _focused;
             SetFocus(FocusRules.Next(_focused, frame));
+            var mousePressed = _mouseFire.Update(focusedBefore, _focused, leftDownOnScreen, Input.GetMouseButton(0));
 
             if (_focused)
             {
+                // 有焦點的期間每幀再看一次：中途才出現的背景音樂來源也靜音（拿到焦點那一下在 SetFocus 裡）。
+                // 出錯只是不靜音，Doom 照常玩：自己接住，不讓 LateUpdate 的 catch 把焦點踢掉
+                try { _musicMute.Update(true); }
+                catch (Exception e) { LogOnce("把遊戲的背景音樂靜音", e); }
                 var wantThumb = Settings.TabletScreen && _tabletScreen != null && _tabletScreen.Alive;
-                if (_session.Tick(Time.unscaledDeltaTime, wantThumb))
+                if (_session.Tick(Time.unscaledDeltaTime, wantThumb, _mouseFire.Held, mousePressed))
                 {
                     // Doom 選單的 Quit Game（決定 20）：切回結帳畫面、暫停
                     ProbablyDoomMod.DebugLog("Doom 選單選了離開：切回結帳畫面");
@@ -197,7 +207,11 @@ namespace ProbablyDoom
             }
             _session.AudioTick(_focused);
 
-            if (_panel != null) _panel.Sync(_doomMode, ViewTexture(), _session.Running && !_focused, Message(), _strings);
+            if (_panel != null)
+            {
+                var message = Message(out var path);
+                _panel.Sync(_doomMode, ViewTexture(), _session.Running && !_focused, message, path, _strings);
+            }
             UpdateTabletScreen();
             Report();
         }
@@ -208,24 +222,33 @@ namespace ProbablyDoom
             _focused = focused;
             InputBlocker.Focused = focused;
             _focusChanges++;
+            if (!focused) _mouseFire.Release();
             _session.SetFocus(focused);
+            // 遊戲的背景音樂：有焦點時靜音，失去焦點（任何原因）就還原（決定 27）
+            try { _musicMute.Update(focused); }
+            catch (Exception e) { LogOnce(focused ? "把遊戲的背景音樂靜音" : "還原遊戲的背景音樂", e); }
             ProbablyDoomMod.DebugLog(focused ? "Doom 拿到焦點（鍵盤給 Doom）" : "Doom 失去焦點（暫停）");
         }
 
         /// <summary>Doom 畫面區要顯示的畫面：在跑（含暫停中）時是 Doom 的最後一格；沒有 WAD、出錯時不顯示。</summary>
         Texture ViewTexture() => _session.Running ? _session.Screen : null;
 
-        /// <summary>Doom 畫面區的說明：沒有 WAD（附 ModData 的路徑，開頭是 %USERPROFILE%）、出錯。</summary>
-        string Message()
+        /// <summary>
+        /// Doom 畫面區的說明與路徑框的路徑（決定 29）：沒有 WAD＝ModData 資料夾、出錯＝Player.log 的位置，都是 %USERPROFILE% 開頭的寫法。
+        /// </summary>
+        TabletPanel.Message Message(out string path)
         {
             switch (_session.Status)
             {
                 case DoomSession.State.NoWad:
-                    return _noWadMessage ?? (_noWadMessage = string.Format(_strings.NoWad, DoomSession.DisplayFolder()));
+                    path = _noWadPath ?? (_noWadPath = DoomSession.DisplayFolder());
+                    return TabletPanel.Message.NoWad;
                 case DoomSession.State.Failed:
-                    return _strings.Error;
+                    path = _logPath ?? (_logPath = DoomSession.DisplayLogFile());
+                    return TabletPanel.Message.Error;
                 default:
-                    return null;
+                    path = null;
+                    return TabletPanel.Message.None;
             }
         }
 
@@ -257,8 +280,7 @@ namespace ProbablyDoom
             _nextLangCheck = Time.unscaledTime + 1f;
             var s = Strings.For(Strings.PickLang(GameInfo.LocaleCode(), GameInfo.ZhHantModRunning()));
             if (s == _strings) return;
-            _strings = s;
-            _noWadMessage = null;
+            _strings = s; // 交易面板的說明看到 Strings 換了就重建（TabletPanel.SyncMessage）
         }
 
         /// <summary>除錯模式：每 10 秒一行（有跑 tic 或焦點有變時才寫，閒著不洗版）。</summary>
@@ -281,7 +303,7 @@ namespace ProbablyDoom
         /// mod 停下來時（ProbablyDoomMod.OnDisable：遊戲結束，或遊戲在執行中停掉這個 mod，例如官方信任清單封鎖、暫停 mod）：
         /// 遊戲先呼叫 OnDisable，之後才拆掉 patch、Destroy 我們型別的 MonoBehaviour（ModLoader.StopRunningMod）；
         /// AudioSource、Image 這些 Unity 的元件與 GameObject 會留著，所以這裡自己收尾：
-        /// 失去焦點（送 KeyUp、停音效）、音效與音樂的 AudioSource 都 Stop、拿掉交易面板上的 DOOM 按鈕與 Doom 畫面區、
+        /// 失去焦點（送 KeyUp、停音效、還原遊戲的背景音樂）、音效與音樂的 AudioSource 都 Stop、拿掉交易面板上的 DOOM 按鈕與 Doom 畫面區、
         /// 拿掉平板本體的小畫面、存 doom.cfg，最後 Destroy 自己的 GameObject（AudioSource 都掛在上面）。
         /// 每一步各自包 try：一步出錯不影響後面的。之後 LateUpdate、按鈕都不再做事。
         /// </summary>
@@ -292,6 +314,9 @@ namespace ProbablyDoom
             try { SetFocus(false); }
             catch (Exception e) { ProbablyDoomMod.Warning($"停止時放開焦點失敗：{e.Message}"); }
             InputBlocker.Focused = false;
+            // 遊戲的背景音樂一定要還原（SetFocus 裡也還原過；那裡出錯時這裡再試一次）
+            try { _musicMute.Restore(); }
+            catch (Exception e) { ProbablyDoomMod.Warning($"停止時還原遊戲的背景音樂失敗：{e.Message}"); }
             _session.StopAudio(); // 音效、音樂各自包 try
             try
             {

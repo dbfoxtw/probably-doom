@@ -41,6 +41,9 @@ namespace ProbablyDoom
         public void Init(ModManifest manifest)
         {
             _log = new ModLog(manifest);
+            // 引擎自己的訊息（「Open WAD files: OK (…)」「Load map 'E1M2': OK」…）只在除錯模式寫、帶我們的前綴（需求.md 決定 30）。
+            // 平常玩家的 log 只有我們自己那行「開始 Doom：…」；出錯時我們記的例外本身就有原因與完整堆疊
+            ManagedDoom.EngineLog.Sink = line => DebugLog("引擎：" + line);
             Settings.Init(); // ModConfig 與 ModData 的列表 Init 就能用（路徑只看存檔資料夾）
             var go = new GameObject("ProbablyDoom");
             UnityEngine.Object.DontDestroyOnLoad(go);
@@ -61,6 +64,7 @@ namespace ProbablyDoom
         public void OnDisable()
         {
             Ready = false;
+            ManagedDoom.EngineLog.Sink = null; // 之後引擎的訊息一律丟掉
             try
             {
                 var runner = DoomRunner.Instance;

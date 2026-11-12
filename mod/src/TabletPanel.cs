@@ -22,8 +22,9 @@ namespace ProbablyDoom
     /// 交易面板（NegociationUIManager 建的平板視窗）上我們加的東西（需求.md 決定 1～5）：
     /// - 上緣的 DOOM 按鈕（DoomButton）：調整大小按鈕的左邊、同樣的間距，寬兩倍、高一樣；每幀對齊調整大小按鈕（Sync）。
     /// - 中間列表區（TabletFrame.body）底下撐滿的 Doom 畫面區：黑底（擋住後面列表的點擊）＋4:3 的 RawImage（左右留黑邊）＋
-    ///   「點一下繼續」＋說明文字（沒有 WAD、出錯）。掛在 body 底下，面板的三種尺寸（StoreUI.ToggleZoom 縮整個視窗）自動跟著縮；
-    ///   body 的高度隨上面的客人資訊變（TabletUI.LayoutSection），畫面跟著重算。
+    ///   「點一下繼續」＋沒有 WAD、出錯時的說明（說明文字、路徑框、「複製路徑」按鈕，決定 29）。
+    ///   掛在 body 底下，面板的三種尺寸（StoreUI.ToggleZoom 縮整個視窗）自動跟著縮；
+    ///   body 的高度隨上面的客人資訊變（TabletUI.LayoutSection），畫面與說明跟著重算。
     /// 遊戲每 0.2 秒重建列表（RefreshNow → Rebuild）只清 infoHost、content、footer、buttonHost，不動 body 的直接子物件，
     /// 但保險起見每幀確認畫面區還是 body 的最後一個子物件（畫在最上層）。
     /// 每次載入店面場景重建一次（物件跟著場景銷毀；Alive 會變成 false）。
@@ -34,6 +35,20 @@ namespace ProbablyDoom
         static readonly Color LabelColor = new Color32(100, 52, 59, 255);
         /// <summary>說明文字與「點一下繼續」：淺米色，接近按鈕圖的亮邊 (213,210,184)，黑底上看得清楚。</summary>
         static readonly Color TextColor = new Color32(213, 210, 184, 255);
+        // 路徑框與「複製路徑」按鈕（使用者選的示意圖，決定 29）
+        static readonly Color BoxFill = new Color32(27, 27, 25, 255);
+        static readonly Color BoxBorder = new Color32(92, 89, 76, 255);
+        static readonly Color ButtonBorder = new Color32(142, 138, 114, 255);
+        static readonly Color ButtonLabelColor = new Color32(42, 38, 41, 255);
+        /// <summary>按鈕的底色：一般同說明文字的淺米色，滑過亮一點、按下暗一點（Button 的 ColorTint，底圖是白的，顏色就是這幾個）。</summary>
+        static readonly Color ButtonNormal = new Color32(213, 210, 184, 255);
+        static readonly Color ButtonHover = new Color32(230, 227, 204, 255);
+        static readonly Color ButtonPressed = new Color32(184, 181, 156, 255);
+        /// <summary>按了「複製路徑」之後顯示「已複製」幾秒。</summary>
+        const float CopiedSeconds = 2f;
+
+        /// <summary>Doom 畫面區要顯示的說明。</summary>
+        internal enum Message { None, NoWad, Error }
 
         readonly NegotiationTabletFrame _frame;
         readonly GameObject _ui;
@@ -47,11 +62,30 @@ namespace ProbablyDoom
         readonly ScreenInput _input;
         readonly RawImage _view;
         readonly GameObject _pause;
-        readonly TextMeshProUGUI _pauseText, _message;
+        readonly TextMeshProUGUI _pauseText;
+
+        // 沒有 WAD、出錯時的說明：一組三件（說明文字、路徑框、複製路徑按鈕），整組等比縮放（MessageLayout）
+        readonly RectTransform _msgRoot, _boxRt, _copyRt;
+        readonly TextMeshProUGUI _msgText, _pathText, _copyLabel;
+        readonly Button _copyButton;
 
         Vector2 _lastButtonPos = new Vector2(float.NaN, float.NaN), _lastButtonSize;
         Vector2 _lastBodySize = new Vector2(-1, -1);
-        string _lastMessage, _lastPause;
+        string _lastPause;
+
+        Message _lastKind;
+        string _lastPath;
+        Strings _lastStrings;
+        Vector2 _lastMsgArea = new Vector2(-1, -1);
+        TMP_FontAsset _lastMsgFont;
+        bool _msgDirty = true, _hasBox, _hasButton;
+        /// <summary>按鈕的字的寬高（「複製路徑」與「已複製」取寬的那個），換字或換字型時重量。</summary>
+        float _labelW, _labelH;
+        /// <summary>路徑框裡那個路徑的原始字串（按鈕複製這個；不從 TMP 讀回來：繁中 mod 會攔截 TMP 的字）。</summary>
+        string _copyText;
+        float _copiedUntil;
+        bool _showingCopied;
+        bool _copyFailed;
 
         TabletPanel(NegotiationTabletFrame frame, GameObject ui, Action onClick, Func<string> tooltip)
         {
@@ -160,11 +194,62 @@ namespace ProbablyDoom
             band.raycastTarget = false;
             _pauseText = NewStretchedText(frame, _pause.transform, "Text", 4f, 8f, 28f);
 
-            // 說明文字（沒有 WAD、出錯）：字很短，自動放大填滿畫面區（上限 48、下限 12，預設的列表區 530×378）；
-            // 換行打開：ModData 的路徑一行放不下時自動換行（TMP 在空白處換，一個字比一行長時在字中間換）
-            _message = NewStretchedText(frame, screen.transform, "Message", 16f, 12f, 48f);
-            _message.enableWordWrapping = true;
+            // ── 沒有 WAD、出錯時的說明（決定 29）：整組照基準寬 530 排、在畫面區置中，放不下就整組等比縮小（MessageLayout）──
+            var msg = new GameObject("Message", typeof(RectTransform));
+            msg.transform.SetParent(screen.transform, false);
+            _msgRoot = (RectTransform)msg.transform;
+            _msgRoot.anchorMin = _msgRoot.anchorMax = _msgRoot.pivot = new Vector2(0.5f, 0.5f);
+            _msgRoot.anchoredPosition = Vector2.zero;
 
+            // 1. 說明文字：置中、照句子換行（中文用 <nobr>，TextMarkup.Sentences）
+            _msgText = TabletUI.NewText(frame, _msgRoot, "Text", 0, 0, 0, 0, FontLoader.FontRole.Noto_Sans, MessageLayout.NoWadTextSize,
+                TextColor, TextAlignmentOptions.Center, true);
+            _msgText.text = "";
+
+            // 2. 路徑框：邊框（外層的底色）＋深色的底（內縮邊框寬）＋靠左的路徑，只在「\」後面換行（TextMarkup.Path）。
+            //    都不收點擊：點在框上照舊算點了 Doom 畫面區（重新找 WAD）
+            _boxRt = NewFlat(_msgRoot, "PathBox", BoxBorder, false);
+            var boxFill = NewFlat(_boxRt, "Fill", BoxFill, false);
+            TabletUI.Stretch(boxFill, MessageLayout.Border);
+            _pathText = TabletUI.NewText(frame, boxFill, "Path", 0, 0, 0, 0, FontLoader.FontRole.Noto_Sans, MessageLayout.PathTextSize,
+                TextColor, TextAlignmentOptions.Left, true);
+            // 字面的 \n、\u＋4 個十六進位…不要轉成控制字元：退回完整路徑時（例如 C:\Users\nick\…）會被拆壞
+            _pathText.parseCtrlCharacters = false;
+            _pathText.text = "";
+            var prt2 = _pathText.rectTransform;
+            prt2.anchorMin = Vector2.zero;
+            prt2.anchorMax = Vector2.one;
+            prt2.pivot = new Vector2(0.5f, 0.5f);
+            prt2.offsetMin = new Vector2(MessageLayout.BoxPadH, MessageLayout.BoxPadV);
+            prt2.offsetMax = new Vector2(-MessageLayout.BoxPadH, -MessageLayout.BoxPadV);
+
+            // 3. 「複製路徑」按鈕：邊框收點擊（整顆都按得到），底是 Button 的 ColorTint 對象（底圖白色，顏色由 ColorBlock 給）
+            var copyBorder = NewFlat(_msgRoot, "CopyPath", ButtonBorder, true);
+            _copyRt = copyBorder;
+            var copyFill = NewFlat(copyBorder, "Fill", Color.white, false);
+            TabletUI.Stretch(copyFill, MessageLayout.Border);
+            _copyLabel = TabletUI.NewText(frame, copyFill, "Label", 0, 0, 0, 0, FontLoader.FontRole.Noto_Sans, MessageLayout.ButtonTextSize,
+                ButtonLabelColor, TextAlignmentOptions.Center);
+            TabletUI.Stretch(_copyLabel.rectTransform);
+            _copyLabel.text = "";
+            _copyButton = copyBorder.gameObject.AddComponent<Button>();
+            _copyButton.targetGraphic = copyFill.GetComponent<Image>();
+            _copyButton.transition = Selectable.Transition.ColorTint;
+            var colors = _copyButton.colors;
+            colors.normalColor = ButtonNormal;
+            colors.highlightedColor = ButtonHover;
+            colors.pressedColor = ButtonPressed;
+            colors.selectedColor = ButtonNormal;
+            colors.disabledColor = ButtonNormal;
+            colors.colorMultiplier = 1f;
+            colors.fadeDuration = 0.05f;
+            _copyButton.colors = colors;
+            _copyButton.onClick.AddListener(CopyPath);
+            TabletUI.NoKeyboardFocus(_copyButton); // 在 Doom 裡按 Enter／空白鍵不會「按」到它
+            // 按鈕接走了按下，黑底的 ScreenInput 收不到（不算點了 Doom 畫面）；視窗照樣要被拉到最上層，交給它往上轉
+            copyBorder.gameObject.AddComponent<ButtonPointerForward>().Screen = _input;
+
+            msg.SetActive(false);
             screen.SetActive(false);
             _button.Refresh();
         }
@@ -187,6 +272,32 @@ namespace ProbablyDoom
             var img = go.AddComponent<RawImage>();
             img.raycastTarget = false;
             return img;
+        }
+
+        /// <summary>一塊純色（沒有圖的 Image）；raycast＝收不收點擊。</summary>
+        static RectTransform NewFlat(Transform parent, string name, Color color, bool raycast)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.color = color;
+            img.raycastTarget = raycast;
+            return (RectTransform)go.transform;
+        }
+
+        /// <summary>左上角錨點、從父物件的左上角往右 x、往下 y 的位置（畫布單位）。</summary>
+        static void PlaceTopLeft(RectTransform rt, float x, float y, float w, float h)
+        {
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(x, -y);
+            rt.sizeDelta = new Vector2(w, h);
+        }
+
+        /// <summary>和遊戲的調整大小按鈕一樣的按鍵聲（NegociationUIManager.OnResizeClick）：DOOM 按鈕與「複製路徑」按鈕用。</summary>
+        internal static void PlayButtonSound()
+        {
+            var audio = EmporiumAudioPlayer.Instance;
+            if (audio != null && audio.audioButton1 != null) audio.audioButton1.Play();
         }
 
         static TextMeshProUGUI NewStretchedText(TabletSkin skin, Transform parent, string name, float inset, float minSize, float maxSize)
@@ -252,14 +363,18 @@ namespace ProbablyDoom
             catch (Exception e) { ProbablyDoomMod.Warning($"拿掉 Doom 畫面區失敗：{e.Message}"); }
         }
 
-        /// <summary>這一幀滑鼠在 Doom 畫面上按下了（ScreenInput）。</summary>
+        /// <summary>這一幀滑鼠在 Doom 畫面上按下了（ScreenInput；「複製路徑」按鈕上不算）。</summary>
         internal bool PointerDownThisFrame => _input != null && _input.PointerDownFrame == Time.frameCount;
+
+        /// <summary>這一幀滑鼠**左鍵**在 Doom 畫面上按下了（滑鼠開火，MouseFire）。</summary>
+        internal bool LeftDownThisFrame => _input != null && _input.LeftDownFrame == Time.frameCount;
 
         /// <summary>
         /// 每幀（DoomRunner.LateUpdate）：DOOM 按鈕對齊調整大小按鈕、顯示 Doom 模式的樣子；Doom 畫面區照狀態顯示。
-        /// texture＝要顯示的畫面（null＝不顯示），message＝說明文字（null＝不顯示），pause＝疊「點一下繼續」。
+        /// texture＝要顯示的畫面（null＝不顯示），pause＝疊「點一下繼續」，message＝說明（沒有 WAD、出錯），
+        /// path＝說明底下路徑框的路徑（DataPaths.Display 的寫法；空字串＝拿不到）。
         /// </summary>
-        internal void Sync(bool doomMode, Texture texture, bool pause, string message, Strings strings)
+        internal void Sync(bool doomMode, Texture texture, bool pause, Message message, string path, Strings strings)
         {
             AlignButton();
             _button.Active = doomMode;
@@ -286,13 +401,113 @@ namespace ProbablyDoom
                 _pauseText.text = strings.Paused;
             }
 
-            var showMessage = message != null;
-            if (_message.gameObject.activeSelf != showMessage) _message.gameObject.SetActive(showMessage);
-            if (showMessage && _lastMessage != message)
+            SyncMessage(message, path, strings);
+        }
+
+        /// <summary>
+        /// 沒有 WAD、出錯時的說明（決定 29）。說明、路徑、語言變了才重建字；字、字型、畫面區大小變了才重排（MessageLayout）。
+        /// 「已複製」顯示 2 秒再變回「複製路徑」。
+        /// </summary>
+        void SyncMessage(Message message, string path, Strings strings)
+        {
+            var show = message != Message.None;
+            var go = _msgRoot.gameObject;
+            if (go.activeSelf != show) go.SetActive(show);
+            if (!show) return;
+
+            path = path ?? "";
+            if (message != _lastKind || path != _lastPath || strings != _lastStrings) RebuildMessage(message, path, strings);
+
+            if (_showingCopied && Time.unscaledTime >= _copiedUntil)
             {
-                _lastMessage = message;
-                _message.text = message;
+                _showingCopied = false;
+                _copyLabel.text = strings.CopyPath;
             }
+
+            var r = _screenRt.rect;
+            var area = new Vector2(r.width, r.height);
+            // 字型會跟著遊戲語言換（TabletUI.NewText 掛的 TMPLocalizer），換了字的寬高就不同，要重量
+            if (_msgText.font != _lastMsgFont) _msgDirty = true;
+            if (!_msgDirty && area == _lastMsgArea) return;
+            _msgDirty = false;
+            _lastMsgArea = area;
+            _lastMsgFont = _msgText.font;
+            LayoutMessage(area);
+        }
+
+        /// <summary>換說明的字：說明兩句（中文用 &lt;nobr&gt; 照句子換行）、路徑框、按鈕（有路徑才有）。</summary>
+        void RebuildMessage(Message message, string path, Strings strings)
+        {
+            _lastKind = message;
+            _lastPath = path;
+            _lastStrings = strings;
+            _msgDirty = true;
+
+            var error = message == Message.Error;
+            _msgText.fontSize = error ? MessageLayout.ErrorTextSize : MessageLayout.NoWadTextSize;
+            _msgText.text = TextMarkup.Sentences(error ? strings.Error : strings.NoWad, strings.Cjk);
+
+            // 路徑拿不到時：出錯畫面的框裡只寫 Player.log、沒有按鈕；沒有 WAD 的畫面不顯示框（沒有東西可以寫）
+            var hasPath = path.Length > 0;
+            _copyText = hasPath ? path : null;
+            _hasBox = hasPath || error;
+            _hasButton = hasPath;
+            _pathText.text = hasPath ? TextMarkup.Path(path) : error ? "Player.log" : "";
+            if (_boxRt.gameObject.activeSelf != _hasBox) _boxRt.gameObject.SetActive(_hasBox);
+            if (_copyRt.gameObject.activeSelf != _hasButton) _copyRt.gameObject.SetActive(_hasButton);
+            _showingCopied = false;
+            _copyLabel.text = strings.CopyPath;
+        }
+
+        /// <summary>
+        /// 照基準寬排三件（MessageLayout），整組在畫面區置中、放不下就整組等比縮小（一個 localScale，字的比例不變）。
+        /// 字的高用 TMP 照固定的寬量（GetPreferredValues），所以換行的位置不隨畫面區大小變。
+        /// </summary>
+        void LayoutMessage(Vector2 area)
+        {
+            var textH = _msgText.GetPreferredValues(_msgText.text, MessageLayout.ContentWidth, 0f).y;
+            var pathH = _hasBox ? _pathText.GetPreferredValues(_pathText.text, MessageLayout.PathTextWidth, 0f).y : 0f;
+            if (_hasButton)
+            {
+                // 「複製路徑」與「已複製」取寬的那個：按了之後按鈕不會變大小
+                var a = _copyLabel.GetPreferredValues(_lastStrings.CopyPath);
+                var b = _copyLabel.GetPreferredValues(_lastStrings.Copied);
+                _labelW = Mathf.Max(a.x, b.x);
+                _labelH = Mathf.Max(a.y, b.y);
+            }
+            var lay = MessageLayout.Compute(area.x, area.y, textH, _hasBox, pathH, _hasButton, _labelW, _labelH);
+
+            _msgRoot.sizeDelta = new Vector2(lay.Width, lay.Height);
+            _msgRoot.localScale = new Vector3(lay.Scale, lay.Scale, 1f);
+            PlaceTopLeft(_msgText.rectTransform, MessageLayout.Inset, lay.TextY, MessageLayout.ContentWidth, lay.TextH);
+            if (_hasBox) PlaceTopLeft(_boxRt, MessageLayout.Inset, lay.BoxY, MessageLayout.ContentWidth, lay.BoxH);
+            if (_hasButton) PlaceTopLeft(_copyRt, (lay.Width - lay.ButtonW) / 2f, lay.ButtonY, lay.ButtonW, lay.ButtonH);
+        }
+
+        /// <summary>
+        /// 「複製路徑」：把框裡那個路徑的原始字串寫進剪貼簿（不是從 TMP 讀回來的字：繁中 mod 會攔截 TMP 的字），
+        /// 按鈕的字變成「已複製」2 秒，播按鍵聲。玩家貼進檔案總管的網址列就打開（%USERPROFILE% 開頭，檔案總管看得懂）。
+        /// GUIUtility.systemCopyBuffer 是 Unity 的剪貼簿（UnityEngine.IMGUIModule），官方掃描不管（決定 29）。
+        /// </summary>
+        void CopyPath()
+        {
+            if (string.IsNullOrEmpty(_copyText) || _lastStrings == null) return;
+            try
+            {
+                GUIUtility.systemCopyBuffer = _copyText;
+            }
+            catch (Exception e)
+            {
+                if (!_copyFailed) ProbablyDoomMod.Warning($"寫進剪貼簿失敗：{e.Message}");
+                _copyFailed = true;
+                return;
+            }
+            _copyLabel.text = _lastStrings.Copied;
+            _showingCopied = true;
+            _copiedUntil = Time.unscaledTime + CopiedSeconds;
+            try { PlayButtonSound(); }
+            catch (Exception) { } // 只是少了聲音
+            ProbablyDoomMod.DebugLog($"複製路徑：{_copyText}");
         }
 
         /// <summary>

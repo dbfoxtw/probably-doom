@@ -56,6 +56,45 @@ namespace ProbablyDoom
     }
 
     /// <summary>
+    /// 滑鼠左鍵在 Doom 畫面上開火（需求.md 決定 26）。不碰 Unity，離線測試測同一份。
+    /// Ctrl 連按會叫出 Windows「按 Ctrl 鍵時顯示指標位置」的圈圈，所以多給左鍵開火；滑鼠照舊不轉向。
+    /// - 按下：左鍵在 Doom 畫面區（ScreenInput 掛的黑底，4:3 畫面連左右黑邊）按下，而且**按下之前就有焦點**才算。
+    ///   拿焦點的那一下（按下時 Doom 還沒有焦點）不開火，按著也不開火。「之前」＝這一幀算焦點之前的狀態：
+    ///   EventSystem 在它的 Update 送按下，DoomRunner 在 LateUpdate 才算焦點。
+    /// - 按著：每幀看左鍵還按著沒有（Input.GetMouseButton(0)），放開就停，在哪裡放開都算（拖出畫面照樣開火到放開）。
+    /// - 至少一個 tic：每次有效的按下都回傳 true，DoomKeyboard 把它鎖存到 tic 跑過才清。35 Hz 的 tic 比畫面的幀慢，
+    ///   按下又放開可能落在兩個 tic 之間（同一幀內，或第 A 幀按下、第 B 幀放開、中間都沒跑到 tic），只看「按著」的話會漏掉一槍。
+    ///   鍵盤沒有這種跨幀的鎖存（鍵盤只補同一幀內的 KeyDown／KeyUp 事件），這是滑鼠開火另外加的。
+    /// - 失去焦點就放開（同鍵盤的 ReleaseAll，回來時不會一直開火）。
+    /// </summary>
+    internal sealed class MouseFire
+    {
+        /// <summary>現在算按著（開火中）。</summary>
+        internal bool Held { get; private set; }
+
+        /// <summary>
+        /// 每幀（算完焦點之後）：focusedBefore＝這一幀算焦點之前有沒有焦點、focusedNow＝算完之後、
+        /// leftDownOnScreen＝這一幀左鍵在 Doom 畫面區按下、leftHeld＝左鍵現在按著。
+        /// 回傳 true＝這一幀有新的有效按下（交給 DoomKeyboard 鎖存，至少開火一個 tic）；長按的行為由 Held 決定，不受影響。
+        /// </summary>
+        internal bool Update(bool focusedBefore, bool focusedNow, bool leftDownOnScreen, bool leftHeld)
+        {
+            if (!focusedNow)
+            {
+                Held = false;
+                return false;
+            }
+            var pressed = leftDownOnScreen && focusedBefore;
+            if (pressed) Held = true;
+            if (Held && !leftHeld) Held = false;
+            return pressed;
+        }
+
+        /// <summary>放開（失去焦點、mod 停掉）。</summary>
+        internal void Release() => Held = false;
+    }
+
+    /// <summary>
     /// 交易面板在 Doom 模式還是結帳畫面（需求.md 決定 2、12、25）。不碰 Unity，離線測試測同一份。
     /// 「Doom 模式」＝按了 DOOM、按鈕顯示成按下去的樣子、列表區換成 Doom 畫面區；焦點另外由 FocusRules 管。
     /// </summary>

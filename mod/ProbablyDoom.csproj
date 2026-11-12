@@ -40,6 +40,8 @@
     <Reference Include="$(ManagedDir)\Unity.TextMeshPro.dll" Private="false" />
     <Reference Include="$(ManagedDir)\UnityEngine.InputLegacyModule.dll" Private="false" />
     <Reference Include="$(ManagedDir)\UnityEngine.AudioModule.dll" Private="false" />
+    <!-- 「複製路徑」按鈕寫剪貼簿：GUIUtility.systemCopyBuffer 在 IMGUI 模組（需求.md 決定 29） -->
+    <Reference Include="$(ManagedDir)\UnityEngine.IMGUIModule.dll" Private="false" />
   </ItemGroup>
 
 </Project>

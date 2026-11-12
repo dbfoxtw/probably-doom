@@ -20,16 +20,16 @@ Probably Doom 整個是 **GPL-2.0-or-later**（全文在 [LICENSE](LICENSE)）�
 
 ## ManagedDoom：改了什麼（2026-11-12）
 
-為什麼要改：遊戲（Probably Stolen）的 mod 掃描（`ModScanner`）不准 mod 自己開檔案（`System.IO.File`、`FileStream`、`Directory`、帶路徑的 `StreamReader`／`StreamWriter`）、開程序（`Process`）、開執行緒，也不准關掉遊戲。所以檔案存取全部改成宿主（mod 的 Unity 那一層，用遊戲的 `ModHelper` 讀寫）給資料，選單的 Quit Game 改成通知宿主。
+為什麼要改：遊戲（Probably Stolen）的 mod 掃描（`ModScanner`）不准 mod 自己開檔案（`System.IO.File`、`FileStream`、`Directory`、帶路徑的 `StreamReader`／`StreamWriter`）、開程序（`Process`）、開執行緒，也不准關掉遊戲。所以檔案存取全部改成宿主（mod 的 Unity 那一層，用遊戲的 `ModHelper` 讀寫）給資料，選單的 Quit Game 改成通知宿主。另外，上游用 `Console.Write`／`WriteLine` 印的訊息（「Open WAD files: OK」…）在 Unity 裡會原樣寫進 Player.log、沒有前綴，改成經過 `EngineLog` 交給宿主決定寫不寫（宿主只在除錯模式寫、帶自己的前綴）。
 
 改過的檔（開頭都有修改註記）：
 
 | 檔案 | 改了什麼 |
 |---|---|
 | `CommandLineArgs.cs` | 拿掉「把 WAD／.deh 拖到執行檔上」的判斷（要 `ConfigUtilities` 找檔）。參數改由宿主用程式碼建；`-iwad`、`-file`、`-deh` 仍然解析但不再使用 |
-| `Config.cs` | 拿掉 `Config(string path)`（`File.ReadLines`）與 `Save(string path)`（`StreamWriter`），改成 `Config.FromText(string)`、`ToText()`：格式同 `managed-doom.cfg`，讀寫檔案由宿主做；`null`／空字串時全用預設值 |
+| `Config.cs` | 拿掉 `Config(string path)`（`File.ReadLines`）與 `Save(string path)`（`StreamWriter`），改成 `Config.FromText(string)`、`ToText()`：格式同 `managed-doom.cfg`，讀寫檔案由宿主做；`null`／空字串時全用預設值。訊息改經過 `EngineLog` |
 | `Doom/Doom.cs` | 建構子多一個 `ISaveStore`（舊的 7 個參數的建構子留著，等於傳 null）；Quit 不結束程式：觸發 `QuitRequested` 事件、那次 `Update()` 回傳 `Completed`、清掉旗標，之後可以接著跑；`-playdemo` 播完回標題畫面（上游是結束程式） |
-| `Doom/DeHackEd.cs` | 拿掉讀外部 `.deh` 檔（`-deh`）；WAD 裡的 `DEHACKED` lump 照舊 |
+| `Doom/DeHackEd.cs` | 拿掉讀外部 `.deh` 檔（`-deh`）；WAD 裡的 `DEHACKED` lump 照舊。訊息改經過 `EngineLog` |
 | `Doom/Common/DoomDebug.cs` | 拿掉寫檔的 `DumpMobjCsv`（上游也沒人呼叫） |
 | `Doom/Game/Demo.cs` | 拿掉從檔案讀 demo 的建構子 |
 | `Doom/Game/DoomGame.cs` | 存讀檔經過 `options.SaveStore`（原本讀寫執行檔旁的 `doomsav<N>.dsg`）；讀空的格子照上游丟例外 |
@@ -40,7 +40,8 @@ Probably Doom 整個是 **GPL-2.0-or-later**（全文在 [LICENSE](LICENSE)）�
 | `Doom/Menu/QuitConfirm.cs` | 確認離開後關掉確認畫面、計數歸零（上游到這裡程式就結束了；不歸零的話玩家回來時會卡在會吃掉所有按鍵的確認畫面） |
 | `Doom/Menu/SaveSlots.cs` | 各格的說明從 `ISaveStore` 讀（原本讀檔，還用了 .NET 7 才有的 `Stream.ReadExactly`）；加 `SlotCount` |
 | `Doom/Opening/DemoPlayback.cs` | 拿掉讀 demo 檔的分支，只找 WAD 裡的 lump |
-| `Doom/Wad/Wad.cs` | `Wad(params WadFile[])`：`MemoryStream` 代替 `FileStream`；遊戲模式照舊靠檔名判斷（doom1、doom、doom2、freedoom1、freedoom2、plutonia、tnt） |
+| `Doom/Wad/Wad.cs` | `Wad(params WadFile[])`：`MemoryStream` 代替 `FileStream`；遊戲模式照舊靠檔名判斷（doom1、doom、doom2、freedoom1、freedoom2、plutonia、tnt）。訊息改經過 `EngineLog` |
+| `Doom/Map/Map.cs`、`Doom/Graphics/ColorMap.cs`、`FlatLookup.cs`、`Palette.cs`、`SpriteLookup.cs`、`TextureAnimation.cs`、`TextureLookup.cs` | 只把 `Console.Write`／`WriteLine` 換成 `EngineLog.Write`／`WriteLine`（2026-11-12 第一次實機測試後；Probably Doom 需求.md 決定 30） |
 
 刪掉的檔：`ConfigUtilities.cs`（`Process.GetCurrentProcess()`、`File`、`Directory`，找執行檔旁的 WAD、設定檔、音色庫）。整個 `Silk/`（平台層：視窗、OpenGL、OpenAL、輸入、`DllImport`、`Thread.Sleep`、`unsafe`）不編、沒放進來。
 
@@ -53,7 +54,7 @@ Probably Doom 整個是 **GPL-2.0-or-later**（全文在 [LICENSE](LICENSE)）�
 | `Audio/DmxSound.cs` | `Silk/SilkSound.cs` | 解 WAD 音效 lump（DMX）的 `GetSamples`、`ContainsDmxPadding`、`GetAmplitude`；多檢查一下檔頭寫的長度超過 lump 的情況（上游會丟例外） |
 | `Video/FrameBufferVideo.cs` | `Silk/SilkVideo.cs` | `IVideo` 的實作：拿掉 OpenGL，只把 `Renderer` 畫進一塊 RGBA 緩衝給宿主 |
 
-我們自己新增的檔（GPL-2.0-or-later，Copyright (C) 2026 dbfoxtw）：`Doom/Game/ISaveStore.cs`、`Doom/Game/NullSaveStore.cs`、`Doom/Wad/WadFile.cs`。
+我們自己新增的檔（GPL-2.0-or-later，Copyright (C) 2026 dbfoxtw）：`Doom/Game/ISaveStore.cs`、`Doom/Game/NullSaveStore.cs`、`Doom/Wad/WadFile.cs`、`EngineLog.cs`（引擎的訊息：`Write` 的半行存著、`WriteLine` 湊成一整行交給宿主設的 `Sink`，`Sink` 是 null 時丟掉；不用 `Console.SetOut`，那是整個程序共用的）。
 
 ## MeltySynth：改了什麼（2026-11-12）
 
@@ -76,3 +77,4 @@ Probably Doom 整個是 **GPL-2.0-or-later**（全文在 [LICENSE](LICENSE)）�
 - **存檔**：`ISaveStore`（`byte[] Read(int slot)`、`void Write(int slot, byte[] data)`，6 格，內容是原版的 `.dsg` 格式）。
 - **設定**：`Config.FromText(string)`、`config.ToText()`。
 - **離開**：`doom.QuitRequested` 事件（同一次 `Update()` 回傳 `UpdateResult.Completed`），程式不結束、之後可以接著跑。
+- **訊息**：`EngineLog.Sink = line => …`（一整行、不含換行；null＝丟掉）。

@@ -37,6 +37,8 @@ namespace ProbablyDoom.Verify
         static int Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            // 引擎自己的訊息（EngineLog）照上游的樣子印到主控台，方便看讀了什麼；mod 裡只在除錯模式寫進 log
+            EngineLog.Sink = line => Info($"引擎：{line}");
             _root = FindRoot();
             _out = Path.Combine(_root, "verify", "out");
             Directory.CreateDirectory(_out);

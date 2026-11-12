@@ -1,4 +1,6 @@
 ﻿//
+// Probably Doom 修改（2026-11-12）：引擎的訊息（Console.Write／WriteLine）改經過 EngineLog，宿主只在除錯模式寫進 log、帶自己的前綴（Unity 會把 Console 的輸出原樣寫進 Player.log）。
+//
 // Copyright (C) 1993-1996 Id Software, Inc.
 // Copyright (C) 2019-2020 Nobuaki Tanaka
 //
@@ -70,7 +72,7 @@ namespace ManagedDoom
                     name = "E" + options.Episode + "M" + options.Map;
                 }
 
-                Console.Write("Load map '" + name + "': ");
+                EngineLog.Write("Load map '" + name + "': ");
 
                 var map = wad.GetLumpNumber(name);
 
@@ -114,11 +116,11 @@ namespace ManagedDoom
                     title = DoomInfo.MapTitles.Doom[options.Episode - 1][options.Map - 1];
                 }
 
-                Console.WriteLine("OK");
+                EngineLog.WriteLine("OK");
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed");
+                EngineLog.WriteLine("Failed");
                 ExceptionDispatchInfo.Throw(e);
             }
         }

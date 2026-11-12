@@ -1,6 +1,6 @@
 // Probably Doom
 // Copyright (C) 2026 dbfoxtw
-// BuildTicCmd 照 ManagedDoom 上游的 Silk/SilkUserInput.cs 改寫（Copyright (C) 2019-2020 Nobuaki Tanaka，GPL v2 or later），拿掉滑鼠的部分。
+// BuildTicCmd 照 ManagedDoom 上游的 Silk/SilkUserInput.cs 改寫（Copyright (C) 2019-2020 Nobuaki Tanaka，GPL v2 or later），拿掉滑鼠轉向，滑鼠鍵只留左鍵。
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,8 +20,9 @@ namespace ProbablyDoom
 
     /// <summary>
     /// Doom 的鍵盤（IUserInput）：記住哪些 Doom 鍵按著，按下、放開時送 DoomEvent 給 Doom（選單、作弊碼、存檔名稱用），
-    /// 玩家的移動由 BuildTicCmd 照按著的鍵與設定的按鍵綁定算（同上游 SilkUserInput）。**只用鍵盤**（需求.md 決定 10）：
-    /// 滑鼠一直是遊戲的，綁定裡的滑鼠鍵不看、也不做滑鼠轉向。
+    /// 玩家的移動由 BuildTicCmd 照按著的鍵與設定的按鍵綁定算（同上游 SilkUserInput）。**只用鍵盤**（需求.md 決定 10），
+    /// 例外是滑鼠左鍵：在 Doom 畫面上按著開火（決定 26；宿主照 MouseFire 的規則設 SetMouse1，綁定裡的 mouse1 才看）。
+    /// 其他滑鼠鍵不看、也不做滑鼠轉向：滑鼠的移動與其他鍵一直是遊戲的。
     /// 不碰 Unity：Unity 的鍵怎麼對到 Doom 鍵在 UnityKeyboard（宿主），這裡只管 Doom 這邊，離線測試測同一份。
     ///
     /// 同一個 Doom 鍵可能對到好幾個 Unity 鍵（Enter 與小鍵盤的 Enter），所以用計數：從 0 變 1 才送按下、回到 0 才送放開。
@@ -32,6 +33,7 @@ namespace ProbablyDoom
         readonly int[] _held = new int[(int)DoomKey.Count];
         readonly bool[] _weaponKeys = new bool[7];
         int _turnHeld;
+        bool _mouse1Held, _mouse1Tap;
 
         internal DoomKeyboard(Config config)
         {
@@ -81,6 +83,7 @@ namespace ProbablyDoom
                 _held[i] = 0;
             }
             _turnHeld = 0;
+            _mouse1Held = _mouse1Tap = false; // 滑鼠左鍵也放開（失去焦點時回來不會一直開火）
             return released;
         }
 
@@ -88,12 +91,36 @@ namespace ProbablyDoom
 
         static bool Valid(DoomKey key) => key >= 0 && key < DoomKey.Count;
 
+        /// <summary>
+        /// 滑鼠左鍵（Doom 綁定裡的 mouse1）：宿主每幀照 <see cref="MouseFire"/> 設（需求.md 決定 26）。
+        /// held＝現在算按著；pressed＝這一幀有新的有效按下：鎖存到 tic 跑過（<see cref="TicsRan"/>）才清，
+        /// 按下又放開落在兩個 tic 之間（同一幀，或跨幾幀都沒跑到 tic）也至少開火一個 tic。
+        /// </summary>
+        internal void SetMouse1(bool held, bool pressed)
+        {
+            _mouse1Held = held;
+            if (pressed) _mouse1Tap = true;
+        }
+
+        /// <summary>這一幀跑了 tic（至少一個）：按下的鎖存到這裡結束（之後照 held）。宿主在跑完 tic 之後叫。</summary>
+        internal void TicsRan() => _mouse1Tap = false;
+
+        /// <summary>滑鼠左鍵算按著（按著，或按下之後還沒跑過 tic）。</summary>
+        internal bool Mouse1Down => _mouse1Held || _mouse1Tap;
+
         bool IsPressed(KeyBinding binding)
         {
             // 用索引走，不用 foreach：Keys 是 IReadOnlyList（介面），foreach 會每次配置一個列舉器，這裡每個 tic 叫 10 次
             var keys = binding.Keys;
             for (var i = 0; i < keys.Count; i++)
                 if (IsDown(keys[i])) return true;
+            // 滑鼠只看左鍵（mouse1，決定 26）；mouse2、mouse3…照舊不看
+            if (_mouse1Held || _mouse1Tap)
+            {
+                var buttons = binding.MouseButtons;
+                for (var i = 0; i < buttons.Count; i++)
+                    if (buttons[i] == DoomMouseButton.Mouse1) return true;
+            }
             return false;
         }
 
@@ -211,7 +238,7 @@ namespace ProbablyDoom
                 }
             }
 
-            // 上游在這裡加上滑鼠的移動；Probably Doom 只用鍵盤，沒有這段
+            // 上游在這裡加上滑鼠的移動；Probably Doom 不做滑鼠轉向，沒有這段
 
             if (forward > PlayerBehavior.MaxMove)
             {
@@ -234,7 +261,7 @@ namespace ProbablyDoom
             cmd.SideMove += (sbyte)side;
         }
 
-        // 滑鼠：不抓、不轉向（需求.md 決定 10）。Doom 的選單仍會顯示滑鼠靈敏度，改了沒有作用。
+        // 滑鼠：不抓、不轉向（需求.md 決定 10、26；左鍵開火走上面的 SetMouse1）。Doom 的選單仍會顯示滑鼠靈敏度，改了沒有作用。
         public void Reset() { }
         public void GrabMouse() { }
         public void ReleaseMouse() { }
