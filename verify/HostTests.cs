@@ -214,15 +214,15 @@ namespace ProbablyDoom.Verify
             Check(!Strings.En.Cjk && Strings.ZhHans.Cjk && Strings.ZhHant.Cjk, "中文照句子換行（Cjk），英文不用");
             // 使用者 2026-11-12 看示意圖定的字（需求.md 決定 29）
             Check(Strings.En.NoWad == "No WAD found.\nPut one in this folder, then press DOOM again:" &&
-                  Strings.En.Error == "Doom stopped because of an error.\nDetails are in this file:" &&
+                  Strings.En.Error == "DOOM stopped because of an error.\nDetails are in this file:" &&
                   Strings.En.CopyPath == "Copy path" && Strings.En.Copied == "Copied",
                   "英文是定稿的字");
             Check(Strings.ZhHant.NoWad == "找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：" &&
-                  Strings.ZhHant.Error == "Doom 出錯停止了。\n詳情寫在這個檔案：" &&
+                  Strings.ZhHant.Error == "DOOM 出錯停止了。\n詳情寫在這個檔案：" &&
                   Strings.ZhHant.CopyPath == "複製路徑" && Strings.ZhHant.Copied == "已複製",
                   "繁中是定稿的字");
             Check(Strings.ZhHans.NoWad == "找不到 WAD。\n放一个进这个文件夹，再按一次 DOOM：" &&
-                  Strings.ZhHans.Error == "Doom 出错停止了。\n详情写在这个文件里：" &&
+                  Strings.ZhHans.Error == "DOOM 出错停止了。\n详情写在这个文件里：" &&
                   Strings.ZhHans.CopyPath == "复制路径" && Strings.ZhHans.Copied == "已复制",
                   "簡中是定稿的字");
         }

@@ -47,20 +47,20 @@ namespace ProbablyDoom
 
         internal static readonly Strings En = new Strings
         {
-            ButtonTooltip = "Switch between Doom and the Tablet's usual screen",
+            ButtonTooltip = "Switch between DOOM and the Tablet's usual screen",
             NoWad = "No WAD found.\nPut one in this folder, then press DOOM again:",
             Paused = "Click to continue",
-            Error = "Doom stopped because of an error.\nDetails are in this file:",
+            Error = "DOOM stopped because of an error.\nDetails are in this file:",
             CopyPath = "Copy path",
             Copied = "Copied",
         };
 
         internal static readonly Strings ZhHans = new Strings
         {
-            ButtonTooltip = "在 Doom 和平板电脑原本的画面之间切换",
+            ButtonTooltip = "在 DOOM 和平板电脑原本的画面之间切换",
             NoWad = "找不到 WAD。\n放一个进这个文件夹，再按一次 DOOM：",
             Paused = "点击继续",
-            Error = "Doom 出错停止了。\n详情写在这个文件里：",
+            Error = "DOOM 出错停止了。\n详情写在这个文件里：",
             CopyPath = "复制路径",
             Copied = "已复制",
             Cjk = true,
@@ -68,10 +68,10 @@ namespace ProbablyDoom
 
         internal static readonly Strings ZhHant = new Strings
         {
-            ButtonTooltip = "在 Doom 和平板電腦原本的畫面之間切換",
+            ButtonTooltip = "在 DOOM 和平板電腦原本的畫面之間切換",
             NoWad = "找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：",
             Paused = "點一下繼續",
-            Error = "Doom 出錯停止了。\n詳情寫在這個檔案：",
+            Error = "DOOM 出錯停止了。\n詳情寫在這個檔案：",
             CopyPath = "複製路徑",
             Copied = "已複製",
             Cjk = true,

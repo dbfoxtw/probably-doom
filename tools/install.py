@@ -52,9 +52,9 @@ class DoomMod(modkit.OfficialMod):
 MOD = DoomMod(
     root=ROOT,
     mod_id="dbfoxtw.probably-doom",  # 和 mod/src/ProbablyDoomMod.cs 的 ModId 一致
-    name="Probably Doom",
+    name="Probably DOOM",
     # 模組畫面的說明，只有英文（遊戲直接顯示、不翻譯）
-    description=("Play Doom on the store's Tablet. Bring your own WAD: put DOOM1.WAD, DOOM.WAD, DOOM2.WAD or Freedoom "
+    description=("Play DOOM on the store's Tablet. Bring your own WAD: put DOOM1.WAD, DOOM.WAD, DOOM2.WAD or Freedoom "
                  "in the mod's data folder."),
     assembly="ProbablyDoom",
     zip_name="ProbablyStolen-ProbablyDoom",

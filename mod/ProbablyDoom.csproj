@@ -13,7 +13,7 @@
     <AssemblyName>ProbablyDoom</AssemblyName>
     <RootNamespace>ProbablyDoom</RootNamespace>
     <!-- 版本號只放這裡：組件版本、manifest.xml 的 ModVersion、打包檔名都從這裡來（tools/modkit.py 的 csproj_version） -->
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <LangVersion>latest</LangVersion>
     <!-- MeltySynth 用了可為 null 的參考型別標註，ManagedDoom 沒有：只開標註、不開警告，兩邊都不用改 -->
     <Nullable>annotations</Nullable>

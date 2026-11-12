@@ -2,8 +2,8 @@
 cfg_wad,WAD
 cfg_wad_tip,ModData 文件夹里有好几个 WAD 时玩哪一个。\nAuto（自动）＝依次选 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重启游戏才会出现在这里。
 cfg_resolution,分辨率
-cfg_resolution_tip,Doom 画面的分辨率。\n640x400＝比较清楚。\n320x200＝原版的粗像素。\n重启游戏后生效。
+cfg_resolution_tip,DOOM 画面的分辨率。\n640x400＝比较清楚。\n320x200＝原版的粗像素。\n重启游戏后生效。
 cfg_tablet_screen,平板电脑本体也显示画面
 cfg_tablet_screen_tip,玩的时候，桌上那台平板电脑也跟着播小画面。
 cfg_mute_game_music,玩的时候游戏的音乐和环境音静音
-cfg_mute_game_music_tip,玩 Doom 的时候，店里的环境音和磁带播放器静音。\nDoom 暂停时恢复。
+cfg_mute_game_music_tip,玩 DOOM 的时候，店里的环境音和磁带播放器静音。\nDOOM 暂停时恢复。

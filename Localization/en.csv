@@ -2,8 +2,8 @@
 cfg_wad,WAD
 cfg_wad_tip,Which WAD to play when the mod's data folder has more than one.\nAuto = DOOM2, DOOM, DOOM1, then Freedoom.\nNew WAD files show up here after restarting the game.
 cfg_resolution,Resolution
-cfg_resolution_tip,Doom's screen resolution.\n640x400 = sharper.\n320x200 = the original chunky pixels.\nTakes effect after restarting the game.
-cfg_tablet_screen,Show Doom on the Tablet itself
-cfg_tablet_screen_tip,"While you play, the Tablet on the desk shows a small copy of the Doom screen."
+cfg_resolution_tip,DOOM's screen resolution.\n640x400 = sharper.\n320x200 = the original chunky pixels.\nTakes effect after restarting the game.
+cfg_tablet_screen,Show DOOM on the Tablet itself
+cfg_tablet_screen_tip,"While you play, the Tablet on the desk shows a small copy of the DOOM screen."
 cfg_mute_game_music,Mute the game's music and background sound while playing
-cfg_mute_game_music_tip,"While you play Doom, the game's background sound and the Cassette Player are muted.\nThey come back when Doom pauses."
+cfg_mute_game_music_tip,"While you play DOOM, the game's background sound and the Cassette Player are muted.\nThey come back when DOOM pauses."

@@ -1,4 +1,4 @@
-# Probably Doom（可能是 Doom）
+# Probably DOOM（可能是 DOOM）
 
 *Probably Stolen*（Questing Goose Studio）的 mod：在店裡的平板電腦上玩 DOOM。遊戲官方格式的 mod；不附任何 DOOM 的遊戲資料（WAD），要自己準備。
 
@@ -19,7 +19,7 @@
 
 ## 怎麼用
 
-1. 在[工作坊](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176)訂閱，開遊戲後在主選單的「模組」畫面啟用「Probably Doom」，照提示重開遊戲。
+1. 在[工作坊](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176)訂閱，開遊戲後在主選單的「模組」畫面啟用「Probably DOOM」，照提示重開遊戲。
 2. 準備 DOOM 的遊戲資料（WAD）：
    - 免費的 Freedoom：到 [freedoom.github.io](https://freedoom.github.io/) 下載，解壓出 `freedoom1.wad` 或 `freedoom2.wad`。
    - Steam 版 DOOM + DOOM II：在收藏庫的遊戲上按右鍵 →「管理」→「瀏覽本機檔案」，`base` 資料夾裡的 `DOOM.WAD`、`base\doom2` 資料夾裡的 `DOOM2.WAD`（用 base 裡的原版，不是 `rerelease` 資料夾裡的）。
@@ -66,7 +66,7 @@ DOOM、DOOM II、Freedoom 都一樣：
 
 ## 授權與致謝
 
-- Probably Doom 是自由軟體，授權是 **GPL-2.0-or-later**（[LICENSE](LICENSE)）。歡迎拿去改造，改過的版本發布時也要用 GPL 公開原始碼。
+- Probably DOOM 是自由軟體，授權是 **GPL-2.0-or-later**（[LICENSE](LICENSE)）。歡迎拿去改造，改過的版本發布時也要用 GPL 公開原始碼。
 - DOOM 引擎是 sinshu 的 [ManagedDoom](https://github.com/sinshu/managed-doom)（GPL v2 or later）；音樂用 [MeltySynth](https://github.com/sinshu/meltysynth)（MIT）與 Tim Brechbill 的 TimGM6mb 音色庫（GPL v2）。來源、版本與我們改了什麼見 [VENDOR.md](VENDOR.md)。
 - DOOM 是 id Software 的註冊商標。本 mod 與 id Software、ZeniMax、Bethesda 無關，也不含任何 DOOM 的遊戲資料。
 - 遊戲的文字、名稱與素材，權利屬於 Questing Goose Studio。
@@ -92,7 +92,7 @@ The code was written by AI (Claude); the design and in-game testing were done by
 
 ### How to use
 
-1. Subscribe on the [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176), start the game, activate "Probably Doom" on the Mods screen of the main menu, and restart as prompted.
+1. Subscribe on the [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176), start the game, activate "Probably DOOM" on the Mods screen of the main menu, and restart as prompted.
 2. Get a DOOM WAD (the game data):
    - Free: download Freedoom from [freedoom.github.io](https://freedoom.github.io/) and unzip `freedoom1.wad` or `freedoom2.wad`.
    - DOOM + DOOM II on Steam: right-click it in your Library → Manage → Browse local files. `DOOM.WAD` is in the `base` folder and `DOOM2.WAD` in `base\doom2` (use these originals, not the ones in the `rerelease` folder).
@@ -104,7 +104,7 @@ The code was written by AI (Claude); the design and in-game testing were done by
 
 ### Settings
 
-The gear on the main menu's Mods screen: WAD (which one to play when there are several), Resolution, Show Doom on the Tablet itself (on by default), Mute the game's music and background sound while playing (on by default).
+The gear on the main menu's Mods screen: WAD (which one to play when there are several), Resolution, Show DOOM on the Tablet itself (on by default), Mute the game's music and background sound while playing (on by default).
 
 ### Controls
 
@@ -138,7 +138,7 @@ To change the keys, close the game and edit `doom.cfg` in the folder above with 
 
 ### License and credits
 
-- Probably Doom is free software under **GPL-2.0-or-later** ([LICENSE](LICENSE)). Feel free to reuse or modify it; modified versions you share must also be released under the GPL with their source code.
+- Probably DOOM is free software under **GPL-2.0-or-later** ([LICENSE](LICENSE)). Feel free to reuse or modify it; modified versions you share must also be released under the GPL with their source code.
 - The DOOM engine is [ManagedDoom](https://github.com/sinshu/managed-doom) by sinshu (GPL v2 or later); the music uses [MeltySynth](https://github.com/sinshu/meltysynth) (MIT) and Tim Brechbill's TimGM6mb sound font (GPL v2). Sources, versions and our changes are in [VENDOR.md](VENDOR.md).
 - DOOM is a registered trademark of id Software. This mod is not affiliated with id Software, ZeniMax or Bethesda, and includes no DOOM game data.
 - The game's text, names and assets belong to Questing Goose Studio.

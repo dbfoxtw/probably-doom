@@ -33,9 +33,9 @@ namespace ProbablyDoom
     {
         /// <summary>
         /// 設定視窗裡的段落標題。遊戲直接顯示這個字串（不經過翻譯），段落又只能在 Init 時定（那時 mod 的 Localization 還沒載入），
-        /// 所以寫固定的英文（一鍵收水的慣例）。用 mod 的名字（使用者 2026-11-12 定，原本是 Doom）。段落不存進設定檔，改名不影響玩家存的設定。
+        /// 所以寫固定的英文（一鍵收水的慣例）。用 mod 的名字（使用者 2026-11-12 定，原本是 Doom；2026-11-13 改成大寫的 DOOM）。段落不存進設定檔，改名不影響玩家存的設定。
         /// </summary>
-        const string Section = "Probably Doom";
+        const string Section = "Probably DOOM";
 
         internal const string HighRes = "640x400";
         internal const string LowRes = "320x200";

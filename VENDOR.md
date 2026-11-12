@@ -1,6 +1,6 @@
 # 第三方元件與本地修改
 
-Probably Doom 整個是 **GPL-2.0-or-later**（全文在 [LICENSE](LICENSE)）：用了 ManagedDoom（GPL v2 or later）與 TimGM6mb.sf2（GPL v2）。各元件的來源、版本、授權與我們改了什麼記在這裡（GPL v2 第 2a 條：改過的檔要有醒目的修改註記與日期；每個改過的檔開頭都有一行「Probably Doom 修改（日期）：…」）。
+Probably DOOM 整個是 **GPL-2.0-or-later**（全文在 [LICENSE](LICENSE)）：用了 ManagedDoom（GPL v2 or later）與 TimGM6mb.sf2（GPL v2）。各元件的來源、版本、授權與我們改了什麼記在這裡（GPL v2 第 2a 條：改過的檔要有醒目的修改註記與日期；每個改過的檔開頭都有一行「Probably Doom 修改（日期）：…」）。
 
 | 元件 | 放在哪裡 | 來源 | 版本 | 授權 |
 |---|---|---|---|---|
