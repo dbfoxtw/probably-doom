@@ -1,0 +1,14 @@
+TimGM6mb.sf2
+============
+
+General MIDI SoundFont by Tim Brechbill, used by Probably Doom to play
+Doom's music (synthesized with MeltySynth).
+
+License: GNU General Public License version 2 (see LICENSE_TimGM6mb.txt).
+
+Taken unmodified from https://github.com/Hawkbat/ow-mod-doom
+(Doom/TimGM6mb.sf2, commit 43c9a7df340c33e4cd07b527c2955e6ffd378a86).
+ManagedDoom (https://github.com/sinshu/managed-doom) distributes the same
+file under the same license.
+Size 5,969,788 bytes, SHA-256
+c5378b62028c920cb11e4803327983fee2f2cdff5dc89c708e39da417e51c854.

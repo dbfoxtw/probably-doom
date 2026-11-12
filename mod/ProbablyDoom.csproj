@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Probably Doom 的 mod 本體：官方格式的 mod（正式版 1.0 起，遊戲自己的 mod 載入器載入）。
+       引擎（engine\ManagedDoom、engine\MeltySynth）與宿主層編成同一個 ProbablyDoom.dll。
+       編譯時參考正式版遊戲的 Probably Stolen_Data\Managed（Mono 組件，只讀、不附進 mod）。
+       遊戲不在預設位置時：dotnet build -p:GameDir="遊戲資料夾"
+       目標框架 netstandard2.1：遊戲的 Assembly-CSharp、UnityEngine.UI、TextMeshPro、0Harmony 都是對 netstandard 編的
+       （Unity 2021.3 的 .NET Standard 2.1 API 相容層級），Managed 裡有 netstandard.dll，Span、MemoryMarshal、Vector<T> 都在；
+       引擎與 MeltySynth 上游本來就用這些，所以照上游的寫法留著，不改成 net48 的陣列寫法（改動最少）。
+       產出的組件只參考 netstandard 與 Managed 裡的組件；遊戲的掃描會拒絕參考了 Managed 以外組件的 mod。 -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>ProbablyDoom</AssemblyName>
+    <RootNamespace>ProbablyDoom</RootNamespace>
+    <!-- 版本號只放這裡：組件版本、manifest.xml 的 ModVersion、打包檔名都從這裡來（tools/modkit.py 的 csproj_version） -->
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <!-- MeltySynth 用了可為 null 的參考型別標註，ManagedDoom 沒有：只開標註、不開警告，兩邊都不用改 -->
+    <Nullable>annotations</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GameDir Condition="'$(GameDir)' == ''">D:\SteamLibrary\steamapps\common\Probably Stolen</GameDir>
+    <ManagedDir>$(GameDir)\Probably Stolen_Data\Managed</ManagedDir>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 引擎的原始碼和離線測試（verify\）共用同一份 -->
+    <Compile Include="..\engine\**\*.cs" LinkBase="engine" />
+    <Reference Include="$(ManagedDir)\0Harmony.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+  </ItemGroup>
+
+</Project>

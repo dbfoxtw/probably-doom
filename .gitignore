@@ -1,0 +1,12 @@
+# 建置輸出
+bin/
+obj/
+build/
+# 離線測試用的 WAD（Freedoom 等）：不進 repo、不放進 mod（WAD 由玩家自己放）
+testdata/
+*.wad
+*.WAD
+# 離線測試輸出的畫面與聲音
+verify/out/
+# Python
+__pycache__/

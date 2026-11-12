@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 離線測試：不需要遊戲。和 mod 編同一批引擎原始碼（..\engine\），WAD 從命令列給路徑（這裡可以用 System.IO，不進 mod）。
+       用法（在 repo 根目錄）：dotnet run 加上 project verify 與 -c Release，後面接要測的 WAD 路徑（寫法見 README.md）
+       不給路徑時用 testdata\freedoom1.wad 與 testdata\freedoom2.wad（Freedoom 0.13.0，不進 repo，見 VENDOR.md）。
+       輸出的畫面（PNG）與音樂（WAV）在 verify\out\。任何一項失敗時結束碼是 1。 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>ProbablyDoomVerify</AssemblyName>
+    <RootNamespace>ProbablyDoom.Verify</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>annotations</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\engine\**\*.cs" LinkBase="engine" />
+    <Compile Remove="out\**" />
+  </ItemGroup>
+
+</Project>
