@@ -22,7 +22,7 @@ namespace ProbablyDoom
     /// 1. wad：放了好幾個 WAD 時玩哪一個（Auto 或檔名；選項是 Init 時在 ModData 找到的 IWAD，新放的要重開遊戲才出現）。
     /// 2. resolution：640x400（預設）或 320x200（用 ASCII 的 x：英文介面的字型可能沒有 ×）。
     /// 3. tablet_screen：平板本體也播小畫面（預設開）。
-    /// 4. mute_game_music：玩的時候遊戲的音樂（店裡的音樂與卡帶播放器）靜音（預設開，決定 31）。
+    /// 4. mute_game_music：玩的時候遊戲的音樂（卡帶播放器）與環境音（店裡的背景聲）靜音（預設開，決定 31；鍵名沿用第一版的 music）。
     /// wad 與 resolution 是 requiresRestart：Doom 整個遊戲執行期間只建一次（第一次切到 Doom 時），之後換 WAD、換解析度都要重開；
     /// tablet_screen 與 mute_game_music 每幀讀，按套用就生效（玩家從主選單改，回到店裡時就是新的值；
     /// 開發工具在店裡打開同一個設定視窗時也是馬上生效）。
@@ -82,7 +82,7 @@ namespace ProbablyDoom
         {
             var wads = WadsAtStart.Count == 0 ? "ModData 裡沒有 WAD" : "ModData 裡的 WAD：" + string.Join("、", WadsAtStart);
             return $"{wads}；設定：WAD {Wad}、解析度 {(HighResolution ? HighRes : LowRes)}、平板本體的小畫面 {(TabletScreen ? "開" : "關")}、" +
-                $"遊戲音樂靜音 {(MuteGameMusic ? "開" : "關")}";
+                $"遊戲音樂與環境音靜音 {(MuteGameMusic ? "開" : "關")}";
         }
     }
 }

@@ -5,5 +5,5 @@ cfg_resolution,Resolution
 cfg_resolution_tip,Doom's screen resolution.\n640x400 = sharper.\n320x200 = the original chunky pixels.\nTakes effect after restarting the game.
 cfg_tablet_screen,Show Doom on the Tablet itself
 cfg_tablet_screen_tip,"While you play, the Tablet on the desk shows a small copy of the Doom screen."
-cfg_mute_game_music,Mute the game's music while playing
-cfg_mute_game_music_tip,"While you play Doom, the store's music and the Cassette Player are muted.\nThey come back when Doom pauses."
+cfg_mute_game_music,Mute the game's music and background sound while playing
+cfg_mute_game_music_tip,"While you play Doom, the game's background sound and the Cassette Player are muted.\nThey come back when Doom pauses."

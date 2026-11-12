@@ -17,17 +17,18 @@ using System.Collections.Generic;
 namespace ProbablyDoom
 {
     /// <summary>
-    /// 我們靜音過的來源與各自原本的 mute（GameMusicMute 用，需求.md 決定 27）。不碰 Unity，離線測試測同一份（T 換成假的物件）。
+    /// 我們靜音過的來源與各自原本的 mute（GameMusicMute 用，需求.md 決定 27、31）。不碰 Unity，離線測試測同一份（T 換成假的物件）。
     ///
-    /// **同一個來源只記一次、只還原一次**：店裡的背景音樂（StoreSoundPlayer.musicAudioSource）與收音機（AudioManager.audioSourceMusic）
-    /// 在目前的遊戲裡是同一個 AudioSource（2026-11-12 UnityPy 讀 level1：都是場景裡唯一的「AudioSourceMusic」）。
-    /// 兩個各自記的話，第二個記到的「原本的 mute」是第一個剛設的 true，還原後就一直靜音。
+    /// **同一個來源只記一次、只還原一次**：GameMusicMute 看的四個欄位裡，StoreSoundPlayer.musicAudioSource 與
+    /// AudioManager.audioSourceMusic 在目前的遊戲裡是同一個 AudioSource（2026-11-12 UnityPy 讀 level1：都是場景裡唯一的「AudioSourceMusic」），
+    /// 環境音的兩個欄位也可能是同一個。各自記的話，第二個記到的「原本的 mute」是第一個剛設的 true，還原後就一直靜音。
     /// 用參考相等比對（同一個物件），已經在清單裡的不再加；還原時每個只還原一次，不依賴順序。
     /// </summary>
     internal sealed class MuteLedger<T> where T : class
     {
-        readonly List<T> _items = new List<T>(2);
-        readonly List<bool> _wasMuted = new List<bool>(2);
+        // 最多四個來源（音樂、環境音各兩個欄位），一開始就給夠，之後不再擴充
+        readonly List<T> _items = new List<T>(4);
+        readonly List<bool> _wasMuted = new List<bool>(4);
 
         /// <summary>記了幾個來源。</summary>
         internal int Count => _items.Count;
