@@ -9,7 +9,9 @@ Probably Stolen_Data\Managed（只讀）。
                                        tools/modscan 檢查用，內容和安裝的一樣）
   python tools/install.py install      編譯後裝到遊戲的 Mods\dbfoxtw.probably-doom\（整個資料夾清空重放）
   python tools/install.py uninstall    移除 Mods\dbfoxtw.probably-doom\（ModData 裡的 WAD、設定、Doom 的存檔保留）
-  python tools/install.py package      編譯後打包給玩家的 zip（還沒有 package\README.txt，下一段再補）
+  python tools/install.py install --debug  同上，再放除錯標記檔 debug（每 10 秒把 Doom 的耗時寫進 Player.log；install.bat 用這個）
+  python tools/install.py package      編譯後打包給玩家的 zip（build\ProbablyStolen-ProbablyDoom-<版本>.zip；
+                                       加上 package\README.txt 與 LICENSE，不放除錯標記檔）
 都可加 --game "遊戲資料夾"（也可設環境變數 PS_GAME_DIR）。
 找遊戲資料夾、編譯、產生 manifest.xml、安裝、打包的做法在 modkit.py（從 Probably Stolen mods 的 monorepo 原樣複製，MIT），
 這裡只寫這個 mod 的設定。
@@ -27,12 +29,15 @@ import modkit  # noqa: E402
 
 ROOT = HERE.parent
 # 音色庫（GPL v2，Tim Brechbill）：音樂用 MeltySynth 合成時讀，放進 mod 資料夾（RIFF 檔頭，遊戲的掃描當成已知媒體放行），
-# 連同它的來源說明與授權全文（純文字，掃描放行）
-ASSETS = [ROOT / "mod" / "assets" / n for n in ("TimGM6mb.sf2", "TimGM6mb.txt", "LICENSE_TimGM6mb.txt")]
+# 連同它的來源說明與授權全文（純文字，掃描放行）；再加上編進 DLL 的 ManagedDoom（GPL v2 or later）與 MeltySynth（MIT，
+# 散布時要附授權全文）的授權。整個 mod 的 GPL 全文是打包時 modkit 放的 LICENSE.txt（repo 根目錄的 LICENSE）
+ASSETS = [ROOT / "mod" / "assets" / n for n in ("TimGM6mb.sf2", "TimGM6mb.txt", "LICENSE_TimGM6mb.txt")] + \
+         [ROOT / "licenses" / n for n in ("LICENSE_ManagedDoom.txt", "LICENSE_MeltySynth.txt")]
 
 
 class DoomMod(modkit.OfficialMod):
-    """modkit 的 official_main 安裝、打包時不傳 extra，所以在這裡把音色庫加進 fill（安裝、打包、stage 共用）。"""
+    """modkit 的 official_main 安裝、打包時不傳 extra，所以在這裡把音色庫與授權檔加進 fill（安裝、打包、stage 共用）。
+    Localization\\*.csv（設定視窗的文字）由 modkit 從 repo 根目錄的 Localization\\ 放；package\\README.txt 也在根目錄。"""
 
     def fill(self, dest: Path, version: str, extra: Callable[[Path], None] | None = None) -> None:
         def add_assets(d: Path) -> None:
@@ -53,7 +58,7 @@ MOD = DoomMod(
                  "in the mod's data folder."),
     assembly="ProbablyDoom",
     zip_name="ProbablyStolen-ProbablyDoom",
-    debug_note="這個檔存在時，mod 會把除錯用的經過寫進 Player.log（0.1.0 還沒有除錯輸出）。\n",
+    debug_note="這個檔存在時，mod 每 10 秒把 Doom 的耗時（每個 tic、畫面＋貼圖上傳）、焦點切換與擋快捷鍵的次數寫進 Player.log。\n",
 )
 
 

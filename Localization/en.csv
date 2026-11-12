@@ -1,0 +1,7 @@
+# Labels and tooltips of this mod's settings window (ModHelper.GetLocalized). Format: key,value (\n = line break). The dropdown choices (Auto, the WAD file names, 640x400 and 320x200) are shown as they are and are not translated.
+cfg_wad,WAD
+cfg_wad_tip,Which WAD to play when the mod's data folder has more than one.\nAuto = DOOM2, DOOM, DOOM1, then Freedoom.\nNew WAD files show up here after restarting the game.
+cfg_resolution,Resolution
+cfg_resolution_tip,Doom's screen resolution.\n640x400 = sharper.\n320x200 = the original chunky pixels.\nTakes effect after restarting the game.
+cfg_tablet_screen,Show Doom on the Tablet itself
+cfg_tablet_screen_tip,"While you play, the Tablet on the desk shows a small copy of the Doom screen."

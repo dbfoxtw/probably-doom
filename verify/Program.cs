@@ -26,8 +26,10 @@ namespace ProbablyDoom.Verify
     /// 離線測試：不開遊戲，直接跑移植後的引擎（和 mod 同一批原始碼）。
     /// 1. 載入 WAD、靠檔名判斷遊戲模式；2. 標題畫面與 demo 跑 700 tic、輸出畫面；3. 存檔成 byte[] 再讀回來；
     /// 4. 音色庫＋MeltySynth 合成標題音樂、解音效 lump；5. 設定字串來回、解析度跟著設定；6. Quit Game 只通知宿主、程式不結束。
+    /// 7. mod 宿主層的純邏輯（mod\src\Core\，不碰 Unity：WAD 挑選、存檔路徑、畫面轉置與小畫面、焦點、快捷鍵、計時、語言、版面、鍵盤）；
+    /// 8. 用實際的畫面跑一次轉置與小畫面（HostTests.cs）。
     /// </summary>
-    internal static class Program
+    internal static partial class Program
     {
         static int _failures;
         static string _root, _out;
@@ -49,6 +51,7 @@ namespace ProbablyDoom.Verify
             Console.WriteLine();
 
             Run("0. 遊戲模式靠檔名判斷（假的空 WAD）", TestModeByName);
+            RunHostTests();
 
             // 引擎的 DeHackEd 與 DoomInfo 是靜態的：同一個程式裡載入第二個 WAD 時，第一個 WAD 的 DEHACKED 改過的表不會還原。
             // 遊戲裡一次只載入一個 WAD（換 WAD 要重開遊戲），這裡照順序跑，第二個 WAD 的結果僅供參考。
@@ -77,6 +80,7 @@ namespace ProbablyDoom.Verify
                 {
                     Run("5. 設定字串來回、解析度跟著設定", () => TestConfig(content));
                     Run("6. Quit Game 只通知宿主", () => TestQuit(content));
+                    Run($"8. {name} 實際的畫面轉成貼圖的排法、平板本體的小畫面", () => TestRealFrame(content, name));
                 }
                 first = false;
                 content.Dispose();

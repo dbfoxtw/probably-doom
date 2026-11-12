@@ -32,6 +32,14 @@
     <Reference Include="$(ManagedDir)\Assembly-CSharp.dll" Private="false" />
     <Reference Include="$(ManagedDir)\UnityEngine.dll" Private="false" />
     <Reference Include="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+    <!-- 宿主層（mod\src）：交易面板的按鈕與畫面（UGUI、TextMeshPro）、鍵盤（舊的 Input）、音效與音樂（AudioSource）。
+         mod\src\Core\ 是不碰 Unity 與遊戲的純邏輯，離線測試（verify\）也編同一份 -->
+    <Reference Include="$(ManagedDir)\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="$(ManagedDir)\UnityEngine.AudioModule.dll" Private="false" />
   </ItemGroup>
 
 </Project>

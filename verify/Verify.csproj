@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <Compile Include="..\engine\**\*.cs" LinkBase="engine" />
+    <!-- mod 宿主層裡不碰 Unity 與遊戲的純邏輯（WAD 挑選、存檔路徑、畫面轉換、焦點規則、語言…） -->
+    <Compile Include="..\mod\src\Core\**\*.cs" LinkBase="core" />
     <Compile Remove="out\**" />
   </ItemGroup>
 
