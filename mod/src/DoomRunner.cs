@@ -187,9 +187,10 @@ namespace ProbablyDoom
 
             if (_focused)
             {
-                // 有焦點的期間每幀再看一次：中途才出現的背景音樂來源也靜音（拿到焦點那一下在 SetFocus 裡）。
+                // 有焦點的期間每幀再看一次：中途才出現的背景音樂來源也靜音（拿到焦點那一下在 SetFocus 裡）；
+                // 設定 mute_game_music 也每幀看（決定 31），玩的時候在店裡關掉就馬上還原、打開就馬上靜音。
                 // 出錯只是不靜音，Doom 照常玩：自己接住，不讓 LateUpdate 的 catch 把焦點踢掉
-                try { _musicMute.Update(true); }
+                try { _musicMute.Update(Settings.MuteGameMusic); }
                 catch (Exception e) { LogOnce("把遊戲的背景音樂靜音", e); }
                 var wantThumb = Settings.TabletScreen && _tabletScreen != null && _tabletScreen.Alive;
                 if (_session.Tick(Time.unscaledDeltaTime, wantThumb, _mouseFire.Held, mousePressed))
@@ -224,8 +225,8 @@ namespace ProbablyDoom
             _focusChanges++;
             if (!focused) _mouseFire.Release();
             _session.SetFocus(focused);
-            // 遊戲的背景音樂：有焦點時靜音，失去焦點（任何原因）就還原（決定 27）
-            try { _musicMute.Update(focused); }
+            // 遊戲的背景音樂：有焦點、而且設定開著時靜音，失去焦點（任何原因）就還原（決定 27、31）
+            try { _musicMute.Update(focused && Settings.MuteGameMusic); }
             catch (Exception e) { LogOnce(focused ? "把遊戲的背景音樂靜音" : "還原遊戲的背景音樂", e); }
             ProbablyDoomMod.DebugLog(focused ? "Doom 拿到焦點（鍵盤給 Doom）" : "Doom 失去焦點（暫停）");
         }

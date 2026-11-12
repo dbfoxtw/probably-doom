@@ -27,7 +27,8 @@ namespace ProbablyDoom
     /// 各記各的話，第二個記到的是第一個剛設的 true，還原後就一直靜音。
     ///
     /// 遊戲自己只改它們的 volume、Play／Pause／Stop，從不碰 mute（2026-11-12 grep 反編譯確認），所以 mute 不會和遊戲打架；
-    /// 卡帶的換曲靠 isPlaying，靜音不影響。我們自己的 Doom 音樂與音效不在這裡面，不受影響。不攔截任何方法、不加設定。
+    /// 卡帶的換曲靠 isPlaying，靜音不影響。我們自己的 Doom 音樂與音效不在這裡面，不受影響。不攔截任何方法。
+    /// 要不要靜音由設定 mute_game_music 決定（預設開，決定 31；DoomRunner 傳 有焦點 && 設定 進來，設定每幀讀）。
     /// 有焦點的期間每幀再看一次：中途才出現（或換了一個）的來源也蓋到，已經記過的不重記。
     /// </summary>
     sealed class GameMusicMute

@@ -5,3 +5,5 @@ cfg_resolution,分辨率
 cfg_resolution_tip,Doom 画面的分辨率。\n640x400＝比较清楚。\n320x200＝原版的粗像素。\n重启游戏后生效。
 cfg_tablet_screen,平板电脑本体也显示画面
 cfg_tablet_screen_tip,玩的时候，桌上那台平板电脑也跟着播小画面。
+cfg_mute_game_music,玩的时候游戏音乐静音
+cfg_mute_game_music_tip,玩 Doom 的时候，店里的音乐和磁带播放器静音。\nDoom 暂停时恢复。
