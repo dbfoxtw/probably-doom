@@ -4,7 +4,7 @@
 
 > A mod for *Probably Stolen*: play DOOM on the store's Tablet. Bring your own WAD. See [English](#english) below.
 
-下載：[Steam 工作坊](WORKSHOP_URL)（訂閱就好）。這個 repo 是它的原始碼。
+下載：[Steam 工作坊](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176)（訂閱就好）。這個 repo 是它的原始碼。
 
 程式由 AI（Claude）撰寫，功能設計與實機測試由作者進行。有問題歡迎回報：[Issues](https://github.com/dbfoxtw/probably-doom/issues) 或工作坊頁面的留言。請回報給本 mod，不要回報給遊戲開發者。
 
@@ -19,7 +19,7 @@
 
 ## 怎麼用
 
-1. 在[工作坊](WORKSHOP_URL)訂閱，開遊戲後在主選單的「模組」畫面啟用「Probably Doom」，照提示重開遊戲。
+1. 在[工作坊](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176)訂閱，開遊戲後在主選單的「模組」畫面啟用「Probably Doom」，照提示重開遊戲。
 2. 準備 DOOM 的遊戲資料（WAD）：
    - 免費的 Freedoom：到 [freedoom.github.io](https://freedoom.github.io/) 下載，解壓出 `freedoom1.wad` 或 `freedoom2.wad`。
    - Steam 版 DOOM + DOOM II：在收藏庫的遊戲上按右鍵 →「管理」→「瀏覽本機檔案」，`base` 資料夾裡的 `DOOM.WAD`、`base\doom2` 資料夾裡的 `DOOM2.WAD`（用 base 裡的原版，不是 `rerelease` 資料夾裡的）。
@@ -77,7 +77,7 @@ DOOM、DOOM II、Freedoom 都一樣：
 
 A mod for *Probably Stolen* (Questing Goose Studio) in the game's official mod format: play DOOM on the store's Tablet. It includes no DOOM game data (WAD); bring your own.
 
-Download: [Steam Workshop](WORKSHOP_URL) (just subscribe). This repository is its source code.
+Download: [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176) (just subscribe). This repository is its source code.
 
 The code was written by AI (Claude); the design and in-game testing were done by the author. Bugs: [Issues](https://github.com/dbfoxtw/probably-doom/issues) or the Workshop comments. Please report problems here, not to the game developers.
 
@@ -92,7 +92,7 @@ The code was written by AI (Claude); the design and in-game testing were done by
 
 ### How to use
 
-1. Subscribe on the [Workshop](WORKSHOP_URL), start the game, activate "Probably Doom" on the Mods screen of the main menu, and restart as prompted.
+1. Subscribe on the [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3838535176), start the game, activate "Probably Doom" on the Mods screen of the main menu, and restart as prompted.
 2. Get a DOOM WAD (the game data):
    - Free: download Freedoom from [freedoom.github.io](https://freedoom.github.io/) and unzip `freedoom1.wad` or `freedoom2.wad`.
    - DOOM + DOOM II on Steam: right-click it in your Library → Manage → Browse local files. `DOOM.WAD` is in the `base` folder and `DOOM2.WAD` in `base\doom2` (use these originals, not the ones in the `rerelease` folder).
