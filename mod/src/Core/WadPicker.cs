@@ -117,10 +117,28 @@ namespace ProbablyDoom
         /// <summary>Doom 的存檔：每個 WAD 分開（不同 WAD 的存檔互相讀不了），格子 0～5 同原版的 doomsav0.dsg～doomsav5.dsg。</summary>
         internal static string SaveSlot(string wadPath, int slot) => $"saves/{WadPicker.SaveKey(wadPath)}/doomsav{slot}.dsg";
 
+        /// <summary>遊戲的存檔資料夾（Application.persistentDataPath）在 Windows 上相對於使用者資料夾的位置：app.info 的公司名與產品名。</summary>
+        internal const string SaveFolderUnderProfile = @"\AppData\LocalLow\Questing Goose Studio\Probably Stolen";
+
         /// <summary>
-        /// 顯示給玩家看的資料夾路徑：Application.persistentDataPath 在 Windows 用 /，Path.Combine 接上的部分用 \，
-        /// 混在一起不好看，統一成 \（玩家要照著在檔案總管裡找）。
+        /// 顯示給玩家看的資料夾路徑（沒有 WAD 時的說明）：
+        /// - Application.persistentDataPath 在 Windows 用 /，Path.Combine 接上的部分用 \，混在一起不好看，統一成 \。
+        /// - 開頭是「使用者資料夾\AppData\LocalLow\Questing Goose Studio\Probably Stolen」時，使用者資料夾換成 %USERPROFILE%：
+        ///   截圖時不露出 Windows 的使用者名稱，整串貼進檔案總管的網址列也打得開（使用者 2026-11-12 定）。
+        /// - 不是這個開頭（別的平台、資料夾被搬走或重新導向、拿不到使用者資料夾）時照原樣顯示完整路徑：換了反而指到錯的地方。
+        /// userProfile＝Environment.GetFolderPath(UserProfile)（呼叫端給，離線測試不碰真的環境）。
         /// </summary>
-        internal static string Display(string folder) => string.IsNullOrEmpty(folder) ? "" : folder.Replace('/', '\\');
+        internal static string Display(string folder, string userProfile)
+        {
+            if (string.IsNullOrEmpty(folder)) return "";
+            var path = folder.Replace('/', '\\');
+            if (string.IsNullOrEmpty(userProfile)) return path;
+            var home = userProfile.Replace('/', '\\').TrimEnd('\\');
+            if (home.Length == 0) return path;
+            var expected = home + SaveFolderUnderProfile;
+            if (!path.StartsWith(expected, StringComparison.OrdinalIgnoreCase)) return path;
+            if (path.Length != expected.Length && path[expected.Length] != '\\') return path; // 例如 …\Probably Stolen Demo
+            return "%USERPROFILE%" + path.Substring(home.Length);
+        }
     }
 }

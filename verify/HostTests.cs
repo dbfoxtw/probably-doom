@@ -36,6 +36,10 @@ namespace ProbablyDoom.Verify
             Run("7g. 語言與畫面上的字", TestStrings);
             Run("7h. DOOM 按鈕的位置與三段拼法、畫面 4:3、平板本體的螢幕位置", TestLayout);
             Run("7i. 鍵盤（按著的鍵、BuildTicCmd、全部放開）", TestKeyboard);
+            Run("7j. 不給 Doom 的 Alt、新的 doom.cfg 的側移鍵", TestAltAndNewConfig);
+            Run("7k. Doom 模式（DOOM 按鈕、找不到 WAD 時重新找、關掉平板回到結帳）", TestModeRules);
+            Run("7l. 沒有 WAD 時顯示的資料夾路徑（%USERPROFILE% 開頭、不是時退回完整路徑）", TestDisplayPath);
+            Run("7m. 熱路徑不配置記憶體（小畫面、BuildTicCmd）", TestNoAllocations);
         }
 
         static void TestWadPicker()
@@ -69,7 +73,7 @@ namespace ProbablyDoom.Verify
             Check(WadPicker.SaveKey("DOOM2.WAD") == "doom2" && WadPicker.SaveKey("freedoom1.wad") == "freedoom1", "存檔資料夾名：小寫、不含副檔名");
             Check(DataPaths.SaveSlot("DOOM2.WAD", 3) == "saves/doom2/doomsav3.dsg", $"存檔路徑 {DataPaths.SaveSlot("DOOM2.WAD", 3)}");
             Check(DataPaths.SaveSlot("doomu.wad", 0) == "saves/doomu/doomsav0.dsg", "doomu 的存檔照原檔名分開放");
-            Check(DataPaths.Display("C:/Users/x/AppData/LocalLow/Q/P/ModData\\dbfoxtw_probably-doom") == @"C:\Users\x\AppData\LocalLow\Q\P\ModData\dbfoxtw_probably-doom",
+            Check(DataPaths.Display("C:/Users/x/AppData/LocalLow/Q/P/ModData\\dbfoxtw_probably-doom", null) == @"C:\Users\x\AppData\LocalLow\Q\P\ModData\dbfoxtw_probably-doom",
                   "顯示給玩家的路徑統一用 \\");
         }
 
@@ -136,8 +140,8 @@ namespace ProbablyDoom.Verify
 
         static void TestFocus()
         {
-            FocusRules.Frame F(bool shown = true, bool running = true, bool down = false, bool onScreen = false, bool quit = false) =>
-                new FocusRules.Frame { DoomShown = shown, Running = running, MouseDown = down, PointerDownOnScreen = onScreen, QuitRequested = quit };
+            FocusRules.Frame F(bool shown = true, bool running = true, bool down = false, bool onScreen = false, bool quit = false, bool app = true) =>
+                new FocusRules.Frame { DoomShown = shown, Running = running, MouseDown = down, PointerDownOnScreen = onScreen, QuitRequested = quit, AppFocused = app };
 
             Check(FocusRules.Next(false, F(down: true, onScreen: true)), "點 Doom 畫面 → 拿到焦點");
             Check(FocusRules.Next(true, F()), "沒按滑鼠 → 照舊有焦點");
@@ -147,6 +151,10 @@ namespace ProbablyDoom.Verify
             Check(!FocusRules.Next(true, F(running: false)), "Doom 出錯停掉 → 失去焦點");
             Check(!FocusRules.Next(false, F(running: false, down: true, onScreen: true)), "沒有 WAD 時點畫面 → 不給焦點");
             Check(!FocusRules.Next(true, F(quit: true)), "Doom 選單選了 Quit Game → 失去焦點");
+            Check(!FocusRules.Next(true, F(app: false)), "遊戲視窗失焦（Alt-Tab 切到別的程式）→ 失去焦點");
+            Check(!FocusRules.Next(false, F(app: true)), "切回遊戲視窗、還沒點畫面 → 不會自己拿回焦點");
+            Check(FocusRules.Next(false, F(down: true, onScreen: true, app: true)), "切回遊戲後再點一下 Doom 畫面 → 拿到焦點");
+            Check(!FocusRules.Next(false, F(down: true, onScreen: true, app: false)), "遊戲視窗沒有焦點時的點擊 → 不給焦點");
         }
 
         static void TestHotkeys()
@@ -187,12 +195,127 @@ namespace ProbablyDoom.Verify
             var en = Strings.En;
             var ascii = new[] { en.ButtonTooltip, en.NoWad, en.Paused, en.Error }.All(s => s.All(ch => ch < 128));
             Check(ascii, "英文的字只用 ASCII（正式版的英文字型缺很多符號）");
+            const string path = @"%USERPROFILE%\AppData\LocalLow\Questing Goose Studio\Probably Stolen\ModData\dbfoxtw_probably-doom";
             foreach (var s in Strings.All)
             {
-                var msg = string.Format(s.NoWad, @"C:\save\ModData\dbfoxtw_probably-doom");
-                Check(msg.EndsWith(@"C:\save\ModData\dbfoxtw_probably-doom") && !string.IsNullOrEmpty(s.ButtonTooltip) && !string.IsNullOrEmpty(s.Paused) && !string.IsNullOrEmpty(s.Error),
-                      $"沒有 WAD 的說明最後一行是資料夾路徑：{msg.Split('\n')[0]}…");
+                var msg = string.Format(s.NoWad, path);
+                var lines = msg.Split('\n');
+                Check(lines.Length == 2 && lines[1] == path && !string.IsNullOrEmpty(s.ButtonTooltip) && !string.IsNullOrEmpty(s.Paused) && !string.IsNullOrEmpty(s.Error),
+                      $"沒有 WAD 的說明：一句話＋換行＋資料夾路徑（{lines[0]}）");
             }
+            // 使用者 2026-11-12 定的最短版
+            Check(Strings.En.NoWad == "No WAD found. Put one in this folder, then press DOOM again:\n{0}", "英文的「找不到 WAD」是定稿的字");
+            Check(Strings.ZhHant.NoWad == "找不到 WAD。放一個進這個資料夾，再按一次 DOOM：\n{0}", "繁中的「找不到 WAD」是定稿的字");
+            Check(Strings.ZhHans.NoWad == "找不到 WAD。放一个进这个文件夹，再按一次 DOOM：\n{0}", "簡中的「找不到 WAD」是定稿的字");
+        }
+
+        static void TestAltAndNewConfig()
+        {
+            var keys = new DoomKeyboard(new Config());
+            Check(!keys.Press(DoomKey.LAlt) && !keys.Press(DoomKey.RAlt) && !keys.IsDown(DoomKey.LAlt) && !keys.IsDown(DoomKey.RAlt),
+                  "左右 Alt 按下不送給 Doom、也不算按著（Alt+F4 會關掉遊戲）");
+            Check(!keys.Release(DoomKey.LAlt), "Alt 放開也不送");
+            Check(keys.Press(DoomKey.F4) && keys.IsDown(DoomKey.F4), "F4 照常給 Doom（音量選單）");
+
+            // 玩家自己的 doom.cfg 設了 Alt 側移：照讀（不改玩家的設定），但 Alt 不會觸發
+            var mine = Config.FromText("key_strafe = lalt, ralt\nkey_strafeleft = a\n");
+            Check(mine.key_strafe.Keys.Contains(DoomKey.LAlt), "已經有的 doom.cfg 照玩家設的讀（key_strafe = lalt, ralt 留著）");
+            var mk = new DoomKeyboard(mine);
+            mk.Press(DoomKey.LAlt);
+            mk.Press(DoomKey.Right);
+            var cmd = new TicCmd();
+            mk.BuildTicCmd(cmd);
+            Check(cmd.SideMove == 0 && cmd.AngleTurn != 0, $"按著 Alt＋→ 只是轉向、不是側移（SideMove {cmd.SideMove}、AngleTurn {cmd.AngleTurn}）");
+
+            // 新建 doom.cfg：沒有 Alt 側移，側移左右是 A／D 加上原版的 , 與 .
+            var fresh = Config.FromText(null);
+            DoomKeyboard.ApplyNewConfigDefaults(fresh);
+            Check(fresh.key_strafe.Keys.Count == 0 && fresh.key_strafe.MouseButtons.Count == 0, $"新的 doom.cfg：key_strafe = {fresh.key_strafe}");
+            Check(fresh.key_strafeleft.Keys.SequenceEqual(new[] { DoomKey.A, DoomKey.Comma }) && fresh.key_straferight.Keys.SequenceEqual(new[] { DoomKey.D, DoomKey.Period }),
+                  $"側移左 {fresh.key_strafeleft}、右 {fresh.key_straferight}");
+            var text = fresh.ToText();
+            Check(text.Contains("key_strafe = none") && text.Contains("key_strafeleft = a, comma") && text.Contains("key_straferight = d, period"),
+                  "寫成 doom.cfg 的字：key_strafe = none、key_strafeleft = a, comma、key_straferight = d, period");
+            var back = Config.FromText(text);
+            Check(back.key_strafe.Keys.Count == 0 && back.key_strafeleft.Keys.Contains(DoomKey.Comma) && back.key_straferight.Keys.Contains(DoomKey.Period),
+                  "寫出去再讀回來一樣（下次開遊戲讀到的是存下來的 doom.cfg，不會再套一次預設）");
+
+            var fk = new DoomKeyboard(fresh);
+            fk.Press(DoomKey.Comma);
+            fk.BuildTicCmd(cmd);
+            var left = cmd.SideMove;
+            fk.ReleaseAll();
+            fk.Press(DoomKey.Period);
+            fk.BuildTicCmd(cmd);
+            Check(left < 0 && cmd.SideMove > 0, $", 往左側移（{left}）、. 往右側移（{cmd.SideMove}）");
+        }
+
+        static void TestModeRules()
+        {
+            Check(ModeRules.OnDoomButton(false, false) == ModeRules.Press.EnterDoom && ModeRules.OnDoomButton(false, true) == ModeRules.Press.EnterDoom,
+                  "結帳畫面按 DOOM → 切到 Doom");
+            Check(ModeRules.OnDoomButton(true, false) == ModeRules.Press.LeaveDoom, "Doom 模式（在跑、暫停、出錯）按 DOOM → 切回結帳");
+            Check(ModeRules.OnDoomButton(true, true) == ModeRules.Press.RetryWad, "Doom 模式、找不到 WAD 時按 DOOM → 先重新找一次");
+            Check(ModeRules.StayAfterRetry(true) && !ModeRules.StayAfterRetry(false), "重新找到了 → 留在 Doom；還是沒有 → 切回結帳");
+            Check(ModeRules.RetryOnScreenClick(true, true, true), "找不到 WAD 的畫面上點一下 → 重新找");
+            Check(!ModeRules.RetryOnScreenClick(true, false, true) && !ModeRules.RetryOnScreenClick(false, true, true) && !ModeRules.RetryOnScreenClick(true, true, false),
+                  "Doom 在跑、不在 Doom 模式、沒點畫面 → 不重新找");
+            Check(ModeRules.KeepDoomMode(true, true, true), "面板開著 → 留在 Doom 模式");
+            Check(!ModeRules.KeepDoomMode(true, true, false), "關掉平板（uiObject 變 inactive）→ 回到結帳，下次打開看到結帳畫面");
+            Check(!ModeRules.KeepDoomMode(true, false, false), "面板沒了（離開店面場景）→ 回到結帳");
+            Check(!ModeRules.KeepDoomMode(false, true, true), "本來就在結帳 → 照舊");
+        }
+
+        static void TestDisplayPath()
+        {
+            const string home = @"C:\Users\someone";
+            const string folder = "C:/Users/someone/AppData/LocalLow/Questing Goose Studio/Probably Stolen\\ModData\\dbfoxtw_probably-doom";
+            const string expect = @"%USERPROFILE%\AppData\LocalLow\Questing Goose Studio\Probably Stolen\ModData\dbfoxtw_probably-doom";
+            Check(DataPaths.Display(folder, home) == expect, $"存檔資料夾在使用者資料夾底下 → {DataPaths.Display(folder, home)}");
+            Check(DataPaths.Display(folder, home + @"\") == expect && DataPaths.Display(folder, "C:/Users/someone") == expect,
+                  "使用者資料夾結尾有 \\、用 / 也一樣");
+            Check(DataPaths.Display(folder.ToLowerInvariant(), home).StartsWith("%USERPROFILE%"), "大小寫不同也認得（Windows 的路徑不分大小寫）");
+            Check(!DataPaths.Display(folder, home).Contains("someone"), "顯示的路徑裡沒有 Windows 的使用者名稱");
+
+            Check(DataPaths.Display(folder, @"C:\Users\other") == folder.Replace('/', '\\'), "使用者資料夾對不上（資料夾被搬走、重新導向）→ 完整路徑");
+            const string moved = @"D:\Saves\Questing Goose Studio\Probably Stolen\ModData\dbfoxtw_probably-doom";
+            Check(DataPaths.Display(moved, home) == moved, "不在使用者資料夾底下 → 完整路徑");
+            const string demo = @"C:\Users\someone\AppData\LocalLow\Questing Goose Studio\Probably Stolen Demo\ModData\x";
+            Check(DataPaths.Display(demo, home) == demo, "…\\Probably Stolen Demo 不算（開頭一樣但不是同一個資料夾）→ 完整路徑");
+            const string linux = "/home/someone/.config/unity3d/Questing Goose Studio/Probably Stolen/ModData/dbfoxtw_probably-doom";
+            Check(!DataPaths.Display(linux, "/home/someone").StartsWith("%USERPROFILE%"), "別的平台（沒有 AppData\\LocalLow）→ 不換成 %USERPROFILE%");
+            Check(DataPaths.Display(folder, null) == folder.Replace('/', '\\') && DataPaths.Display(folder, "") == folder.Replace('/', '\\'),
+                  "拿不到使用者資料夾 → 完整路徑");
+            Check(DataPaths.Display("", home) == "" && DataPaths.Display(null, home) == "", "拿不到資料夾 → 空字串");
+        }
+
+        static void TestNoAllocations()
+        {
+            const int W = 640, H = 400, TW = TabletGeometry.ScreenW, TH = TabletGeometry.ScreenH;
+            var src = ColumnMajor(W, H);
+            var dst1 = new uint[TW * TH];
+            FrameConvert.Thumbnail(src, W, H, dst1, TW, TH); // 第一次：建累加用的陣列
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            FrameConvert.Thumbnail(src, W, H, dst1, TW, TH);
+            var bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            Check(bytes == 0, $"小畫面縮第二次起不配置記憶體（{bytes} bytes）");
+
+            // 重用的累加陣列比需要的大時（先縮過高的、再縮矮的）結果照樣對：和全新算的一樣
+            var tall = new uint[40 * 120];
+            FrameConvert.Thumbnail(src, W, H, tall, 40, 120);
+            var dst2 = new uint[TW * TH];
+            FrameConvert.Thumbnail(src, W, H, dst2, TW, TH);
+            Check(dst1.SequenceEqual(dst2), "累加陣列重用（大小不同的縮圖交錯）結果不變");
+
+            var keys = new DoomKeyboard(new Config());
+            var cmd = new TicCmd();
+            keys.Press(DoomKey.W);
+            keys.Press(DoomKey.Left);
+            keys.BuildTicCmd(cmd);
+            before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 35; i++) keys.BuildTicCmd(cmd);
+            bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            Check(bytes == 0, $"BuildTicCmd 跑 35 次（1 秒）不配置記憶體（{bytes} bytes）");
         }
 
         static void TestLayout()

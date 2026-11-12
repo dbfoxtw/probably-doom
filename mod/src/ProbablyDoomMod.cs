@@ -22,7 +22,7 @@ namespace ProbablyDoom
     /// Probably Doom：在店裡的平板上玩 Doom（ManagedDoom 的引擎＋MeltySynth）。
     /// 交易面板（點平板開的視窗）上緣多一顆 DOOM 按鈕，按了中間的列表區換成 Doom 的畫面；玩的時候桌上的平板本體也播小畫面。
     /// 官方格式的 mod（manifest.xml 與 IMod）：遊戲的 mod 載入器先用 id「mod.＋ID」的 Harmony PatchAll（攔截都在 Patches.cs），
-    /// 再呼叫 Init、OnEnable；結束遊戲時呼叫 OnDisable。攔截在 Init 跑完之前一律放行（Ready）。
+    /// 再呼叫 Init、OnEnable；結束遊戲或遊戲停掉這個 mod 時呼叫 OnDisable。攔截在 Init 跑完之前一律放行（Ready）。
     /// 每幀的工作交給不隨場景銷毀的 DoomRunner（官方的 IMod 沒有每幀的回呼）。不宣告任何權限：檔案都經過遊戲的 ModHelper。
     /// 程式結構與每個決定的理由見 monorepo 的 mods/probably-doom/docs/設計.md。
     /// </summary>
@@ -52,16 +52,21 @@ namespace ProbablyDoom
 
         public void OnEnable() { }
 
-        /// <summary>遊戲結束時（ModLoader.OnApplicationQuit）呼叫：把 Doom 的設定（音量、按鍵…）寫回 ModData 的 doom.cfg。</summary>
+        /// <summary>
+        /// 遊戲結束時（ModLoader.OnApplicationQuit），或遊戲在執行中停掉這個 mod 時（ModLoader.StopRunningMod：信任清單封鎖、暫停 mod）呼叫。
+        /// 停掉 mod 時遊戲之後只拆 patch、Destroy 我們型別的 MonoBehaviour，聲音、交易面板上加的東西、小畫面都會留著，
+        /// 所以交給 DoomRunner.Shutdown 收尾（失去焦點、停聲音、拿掉加的東西、存 doom.cfg、拿掉自己的物件）。
+        /// 先把 Ready 關掉：收尾途中與之後，攔截一律放行、每幀的更新不再做事。
+        /// </summary>
         public void OnDisable()
         {
+            Ready = false;
             try
             {
                 var runner = DoomRunner.Instance;
                 if (runner != null) runner.Shutdown();
             }
-            catch (Exception e) { Warning($"關遊戲前存 Doom 的設定失敗：{e.Message}"); }
-            Ready = false;
+            catch (Exception e) { Warning($"停止時收尾失敗：{e.Message}"); }
         }
 
         /// <summary>

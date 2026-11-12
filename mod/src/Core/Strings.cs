@@ -27,7 +27,10 @@ namespace ProbablyDoom
     {
         /// <summary>DOOM 按鈕的提示框。</summary>
         internal string ButtonTooltip;
-        /// <summary>ModData 裡找不到 WAD（{0}＝ModData 資料夾的完整路徑）。</summary>
+        /// <summary>
+        /// ModData 裡找不到 WAD（{0}＝ModData 資料夾的路徑，DataPaths.Display：開頭是 %USERPROFILE%）。
+        /// 只寫最短的一句（使用者 2026-11-12 定）：去哪裡拿 WAD、支援哪些檔寫在說明頁。
+        /// </summary>
         internal string NoWad;
         /// <summary>Doom 暫停中（沒焦點），疊在最後一格畫面上。</summary>
         internal string Paused;
@@ -37,7 +40,7 @@ namespace ProbablyDoom
         internal static readonly Strings En = new Strings
         {
             ButtonTooltip = "Switch between Doom and the Tablet's usual screen",
-            NoWad = "No Doom WAD found.\nPut DOOM1.WAD (shareware), DOOM.WAD, DOOM2.WAD or a Freedoom WAD (freedoom1.wad / freedoom2.wad, free at freedoom.github.io) in this folder, then press DOOM again:\n{0}",
+            NoWad = "No WAD found. Put one in this folder, then press DOOM again:\n{0}",
             Paused = "Click to continue",
             Error = "Doom stopped because of an error. Details are in Player.log.",
         };
@@ -45,7 +48,7 @@ namespace ProbablyDoom
         internal static readonly Strings ZhHans = new Strings
         {
             ButtonTooltip = "在 Doom 和平板电脑原本的画面之间切换",
-            NoWad = "找不到 Doom 的 WAD。\n把 DOOM1.WAD（共享版）、DOOM.WAD、DOOM2.WAD 或 Freedoom 的 WAD（freedoom1.wad／freedoom2.wad，可在 freedoom.github.io 免费下载）放进这个文件夹，再按一次 DOOM：\n{0}",
+            NoWad = "找不到 WAD。放一个进这个文件夹，再按一次 DOOM：\n{0}",
             Paused = "点击继续",
             Error = "Doom 出错停止了，详情见 Player.log。",
         };
@@ -53,7 +56,7 @@ namespace ProbablyDoom
         internal static readonly Strings ZhHant = new Strings
         {
             ButtonTooltip = "在 Doom 和平板電腦原本的畫面之間切換",
-            NoWad = "找不到 Doom 的 WAD。\n把 DOOM1.WAD（共享版）、DOOM.WAD、DOOM2.WAD 或 Freedoom 的 WAD（freedoom1.wad／freedoom2.wad，可在 freedoom.github.io 免費下載）放進這個資料夾，再按一次 DOOM：\n{0}",
+            NoWad = "找不到 WAD。放一個進這個資料夾，再按一次 DOOM：\n{0}",
             Paused = "點一下繼續",
             Error = "Doom 出錯停止了，詳情在 Player.log。",
         };

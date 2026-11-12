@@ -29,6 +29,10 @@ namespace ProbablyDoom
         /// <summary>不透明的黑（R=G=B=0、A=255）。</summary>
         internal const uint Black = 0xFF000000u;
 
+        // Thumbnail 每一欄的累加用：每兩個 tic 縮一次，不要每次 new（熱路徑不配置，免得 GC 在玩的時候頓一下）。
+        // 只有主執行緒呼叫（DoomSession.Render；離線測試也是單執行緒），不夠大時才換大的。
+        static int[] _sumR = new int[0], _sumG = new int[0], _sumB = new int[0], _count = new int[0];
+
         /// <summary>
         /// 引擎的直行優先轉成 Unity 的橫列優先、由下往上：Doom 的 (x, y) → 貼圖的 (x, height-1-y)。
         /// src、dst 都要至少 width*height 個；兩個不能是同一個陣列。順著 src 讀（一行一行），寫的時候跳著寫。
@@ -79,10 +83,17 @@ namespace ProbablyDoom
 
             for (var i = 0; i < tw * th; i++) dst[i] = Black;
 
-            var sumR = new int[ch];
-            var sumG = new int[ch];
-            var sumB = new int[ch];
-            var count = new int[ch];
+            if (_count.Length < ch)
+            {
+                _sumR = new int[ch];
+                _sumG = new int[ch];
+                _sumB = new int[ch];
+                _count = new int[ch];
+            }
+            var sumR = _sumR;
+            var sumG = _sumG;
+            var sumB = _sumB;
+            var count = _count;
 
             for (var i = 0; i < cw; i++)
             {

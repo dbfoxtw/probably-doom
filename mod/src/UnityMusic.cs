@@ -105,6 +105,17 @@ namespace ProbablyDoom
             if (source.isPlaying) source.Pause();
         }
 
+        /// <summary>
+        /// mod 被停掉時（ProbablyDoomMod.OnDisable）：停止播放、之後不再合成。AudioSource 是 Unity 的型別，遊戲停掉 mod 時不會被 Destroy，
+        /// 串流的 clip 還會一直呼叫 OnRead；設成 failed 讓它只輸出靜音（不再碰 SynthMusic）。
+        /// </summary>
+        internal void Stop()
+        {
+            failed = true;
+            errorLogged = true; // 不是出錯，Tick 不要記 log
+            if (source != null) source.Stop();
+        }
+
         public void StartMusic(Bgm bgm, bool loop) => synth.StartMusic(bgm, loop);
 
         public int MaxVolume => synth.MaxVolume;

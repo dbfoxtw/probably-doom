@@ -6,7 +6,7 @@ The Doom engine is ManagedDoom (C#, by Nobuaki Tanaka); music is synthesized wit
 This mod does NOT include any Doom game data (WAD). Bring your own.
 
 [Install]
-This is an official-format mod for the game (no MelonLoader needed, no permissions).
+This is an official-format mod for the game and needs no permissions.
 1. Close the game. Unzip the dbfoxtw.probably-doom folder in this zip into the game's Mods folder
    (you should end up with Mods\dbfoxtw.probably-doom\manifest.xml).
    To find the game folder: Steam Library > right-click the game > Manage > Browse local files.

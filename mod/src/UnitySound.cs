@@ -378,6 +378,24 @@ namespace ProbablyDoom
             }
         }
 
+        /// <summary>
+        /// mod 被停掉時（ProbablyDoomMod.OnDisable）：全部聲道停下來。遊戲停掉 mod 時只 Destroy 我們型別的 MonoBehaviour，
+        /// AudioSource 是 Unity 的型別、會留著，暫停中的聲音也還掛著。每個聲道各自包 try：一個出錯不影響其他的停。
+        /// </summary>
+        internal void StopAll()
+        {
+            for (var i = 0; i < channels.Length; i++)
+            {
+                try { if (channels[i] != null) channels[i].Stop(); }
+                catch (Exception) { }
+                doomPaused[i] = false;
+                hostPaused[i] = false;
+            }
+            try { if (uiChannel != null) uiChannel.Stop(); }
+            catch (Exception) { }
+            uiHostPaused = false;
+        }
+
         void SetParam(AudioSource sound, ChannelInfo info)
         {
             if (info.Type == SfxType.Diffuse || listener == null)

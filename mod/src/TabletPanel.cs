@@ -158,9 +158,11 @@ namespace ProbablyDoom
             var band = _pause.AddComponent<Image>();
             band.color = new Color(0f, 0f, 0f, 0.6f);
             band.raycastTarget = false;
-            _pauseText = NewStretchedText(frame, _pause.transform, "Text", 4f, 28f);
+            _pauseText = NewStretchedText(frame, _pause.transform, "Text", 4f, 8f, 28f);
 
-            _message = NewStretchedText(frame, screen.transform, "Message", 16f, 22f);
+            // 說明文字（沒有 WAD、出錯）：字很短，自動放大填滿畫面區（上限 48、下限 12，預設的列表區 530×378）；
+            // 換行打開：ModData 的路徑一行放不下時自動換行（TMP 在空白處換，一個字比一行長時在字中間換）
+            _message = NewStretchedText(frame, screen.transform, "Message", 16f, 12f, 48f);
             _message.enableWordWrapping = true;
 
             screen.SetActive(false);
@@ -187,13 +189,13 @@ namespace ProbablyDoom
             return img;
         }
 
-        static TextMeshProUGUI NewStretchedText(TabletSkin skin, Transform parent, string name, float inset, float maxSize)
+        static TextMeshProUGUI NewStretchedText(TabletSkin skin, Transform parent, string name, float inset, float minSize, float maxSize)
         {
             var t = TabletUI.NewText(skin, parent, name, 0, 0, 0, 0, FontLoader.FontRole.Noto_Sans, maxSize, TextColor,
                 TextAlignmentOptions.Center);
             TabletUI.Stretch(t.rectTransform, inset);
             t.enableAutoSizing = true;
-            t.fontSizeMin = 8f;
+            t.fontSizeMin = minSize;
             t.fontSizeMax = maxSize;
             t.text = "";
             return t;
@@ -216,8 +218,39 @@ namespace ProbablyDoom
         /// <summary>面板的物件還在（離開店面場景時跟著場景銷毀）。</summary>
         internal bool Alive => _frame != null && _ui != null && _button != null && _screenRt != null && _resize != null;
 
-        /// <summary>交易面板開著。</summary>
+        /// <summary>交易面板開著（畫得出來：自己和上層都是 active）。</summary>
         internal bool Open => Alive && _ui.activeInHierarchy;
+
+        /// <summary>面板自己是 active（遊戲的 CloseUI 把 uiObject 設成 inactive；ModeRules.KeepDoomMode 看這個）。</summary>
+        internal bool ActiveSelf => Alive && _ui.activeSelf;
+
+        /// <summary>
+        /// mod 被停掉時（DoomRunner.Shutdown）：拿掉我們加的 DOOM 按鈕與 Doom 畫面區。遊戲停掉 mod 時只 Destroy 我們型別的
+        /// MonoBehaviour（DoomButton、ScreenInput），Image、RawImage、TextMeshPro 這些 Unity 的元件會留在面板上：
+        /// 黑底會一直蓋住列表、擋住點擊。兩個各自包 try。
+        /// </summary>
+        internal void Teardown()
+        {
+            // 先 inactive 再 Destroy：Destroy 要等這一幀結束才生效，inactive 馬上就看不到、點不到
+            try
+            {
+                if (_buttonRt != null)
+                {
+                    _buttonRt.gameObject.SetActive(false);
+                    UnityEngine.Object.Destroy(_buttonRt.gameObject);
+                }
+            }
+            catch (Exception e) { ProbablyDoomMod.Warning($"拿掉 DOOM 按鈕失敗：{e.Message}"); }
+            try
+            {
+                if (_screenRt != null)
+                {
+                    _screenRt.gameObject.SetActive(false);
+                    UnityEngine.Object.Destroy(_screenRt.gameObject);
+                }
+            }
+            catch (Exception e) { ProbablyDoomMod.Warning($"拿掉 Doom 畫面區失敗：{e.Message}"); }
+        }
 
         /// <summary>這一幀滑鼠在 Doom 畫面上按下了（ScreenInput）。</summary>
         internal bool PointerDownThisFrame => _input != null && _input.PointerDownFrame == Time.frameCount;

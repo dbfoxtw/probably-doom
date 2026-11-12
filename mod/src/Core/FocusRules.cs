@@ -32,21 +32,67 @@ namespace ProbablyDoom
             internal bool PointerDownOnScreen;
             /// <summary>Doom 選單選了 Quit Game（這一幀的 tic 裡觸發的 QuitRequested）。</summary>
             internal bool QuitRequested;
+            /// <summary>
+            /// 遊戲視窗有焦點（Application.isFocused）。玩家 Alt-Tab 出去時遊戲在背景照跑（只降 fps），
+            /// Doom 不能跟著繼續跑、也不能讓按著的鍵留著（切出去時放開的鍵 Unity 收不到）。
+            /// </summary>
+            internal bool AppFocused;
         }
 
         /// <summary>
         /// 下一幀有沒有焦點：
-        /// - 沒顯示 Doom（切回結帳、關面板、離開店面場景）、Doom 沒在跑、選了 Quit Game：沒有。
+        /// - 沒顯示 Doom（切回結帳、關面板、離開店面場景）、Doom 沒在跑、選了 Quit Game、遊戲視窗沒有焦點（切到別的程式）：沒有。
+        ///   切回遊戲後不會自己拿回焦點，要再點一下 Doom 畫面（和點別處再點回來一樣）。
         /// - 這一幀按了滑鼠：點在 Doom 畫面上就有，點別處（物品、別的視窗、DOOM 按鈕）就沒有。
         /// - 其他時候照舊。
         /// </summary>
         internal static bool Next(bool focused, Frame f)
         {
-            if (!f.DoomShown || !f.Running || f.QuitRequested) return false;
+            if (!f.DoomShown || !f.Running || f.QuitRequested || !f.AppFocused) return false;
             if (f.PointerDownOnScreen) return true;
             if (f.MouseDown) return false;
             return focused;
         }
+    }
+
+    /// <summary>
+    /// 交易面板在 Doom 模式還是結帳畫面（需求.md 決定 2、12、25）。不碰 Unity，離線測試測同一份。
+    /// 「Doom 模式」＝按了 DOOM、按鈕顯示成按下去的樣子、列表區換成 Doom 畫面區；焦點另外由 FocusRules 管。
+    /// </summary>
+    internal static class ModeRules
+    {
+        /// <summary>按 DOOM 要做什麼。</summary>
+        internal enum Press
+        {
+            /// <summary>從結帳畫面切到 Doom（還沒建就建；沒有 WAD 時停在說明畫面）。</summary>
+            EnterDoom,
+            /// <summary>切回結帳畫面（Doom 暫停）。</summary>
+            LeaveDoom,
+            /// <summary>Doom 模式中、還沒有 WAD：先重新找一次，找到就開始 Doom、留在 Doom 模式，還是沒有才切回結帳（<see cref="StayAfterRetry"/>）。</summary>
+            RetryWad,
+        }
+
+        /// <summary>
+        /// 按 DOOM：結帳畫面 → 切到 Doom；Doom 模式中 → 切回結帳，但畫面是「找不到 WAD」的說明時先重新找一次：
+        /// 說明寫的是「放好 WAD 再按一次 DOOM」，玩家照做時按的是同一顆按鈕，只切回結帳的話還要再按一次才看得到 Doom。
+        /// </summary>
+        internal static Press OnDoomButton(bool doomMode, bool noWad) => !doomMode ? Press.EnterDoom : noWad ? Press.RetryWad : Press.LeaveDoom;
+
+        /// <summary>按 DOOM 重新找 WAD 之後：找到（Doom 開始跑）就留在 Doom 模式，還是沒有就切回結帳（按鈕照常是開關）。</summary>
+        internal static bool StayAfterRetry(bool found) => found;
+
+        /// <summary>
+        /// 點一下 Doom 畫面區要不要重新找 WAD：Doom 模式中、畫面是「找不到 WAD」的說明時。找到了就照常開始（同一下點擊也給焦點，
+        /// 點的就是 Doom 畫面）；還是沒有就留在說明畫面。
+        /// </summary>
+        internal static bool RetryOnScreenClick(bool doomMode, bool noWad, bool pointerDownOnScreen) => doomMode && noWad && pointerDownOnScreen;
+
+        /// <summary>
+        /// 這一幀過後還在不在 Doom 模式：面板沒了（離開店面場景）或關掉了（uiObject 變 inactive：關閉按鈕、Esc、遊戲自己關）就回到結帳，
+        /// 下次打開平板看到的是結帳畫面（決定 25），要玩再按 DOOM（Doom 照決定 11 暫停著，按了接著玩）。
+        /// 只看面板自己的 activeSelf，不看 activeInHierarchy：上層暫時藏起來不算玩家關掉平板。
+        /// </summary>
+        internal static bool KeepDoomMode(bool doomMode, bool panelAlive, bool panelActiveSelf) => doomMode && panelAlive && panelActiveSelf;
     }
 
     /// <summary>擋遊戲快捷鍵的判斷（Patches.cs 的掛點用；需求.md 決定 10，做法照簡易待辦）。KeyCode 用數值傳進來，不碰 Unity。</summary>

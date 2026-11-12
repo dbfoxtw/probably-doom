@@ -38,11 +38,30 @@ namespace ProbablyDoom
             _config = config;
         }
 
-        /// <summary>一個 Unity 鍵按下了：對到的 Doom 鍵從沒按變成按著時回傳 true（呼叫端送 KeyDown）。</summary>
+        /// <summary>一個 Unity 鍵按下了：對到的 Doom 鍵從沒按變成按著時回傳 true（呼叫端送 KeyDown）。Alt 一律不收（<see cref="Ignored"/>）。</summary>
         internal bool Press(DoomKey key)
         {
-            if (!Valid(key)) return false;
+            if (!Valid(key) || Ignored(key)) return false;
             return ++_held[(int)key] == 1;
+        }
+
+        /// <summary>
+        /// 不給 Doom 的鍵：左右 Alt。Doom 原本用 Alt 側移（按著 Alt 再按左右轉），可是玩的時候按著 Alt 再按 F4（Doom 的音量選單）
+        /// 會變成 Alt+F4 關掉整個遊戲，Alt+Tab、Alt+Enter 也會切出遊戲、切全螢幕。所以就算玩家自己在 doom.cfg 設了 Alt，
+        /// 也不讓它觸發；側移用 A／D 或 , ／ .（新的 doom.cfg 的預設，<see cref="ApplyNewConfigDefaults"/>）。
+        /// UnityKeyboard 本來就不讀 Alt，這裡再擋一次，離線測試測得到。
+        /// </summary>
+        internal static bool Ignored(DoomKey key) => key == DoomKey.LAlt || key == DoomKey.RAlt;
+
+        /// <summary>
+        /// 第一次建 doom.cfg 時（ModData 裡還沒有這個檔）改掉的預設：拿掉 Alt 側移（key_strafe 改成 none，原因見 <see cref="Ignored"/>），
+        /// 側移左右除了 ManagedDoom 預設的 A／D，再加上原版 Doom 的 , 與 .。已經有 doom.cfg 的不改（玩家自己設的）。
+        /// </summary>
+        internal static void ApplyNewConfigDefaults(Config config)
+        {
+            config.key_strafe = KeyBinding.Empty;
+            config.key_strafeleft = new KeyBinding(new[] { DoomKey.A, DoomKey.Comma });
+            config.key_straferight = new KeyBinding(new[] { DoomKey.D, DoomKey.Period });
         }
 
         /// <summary>一個 Unity 鍵放開了：對到的 Doom 鍵變成沒按時回傳 true（呼叫端送 KeyUp）。</summary>
@@ -71,8 +90,10 @@ namespace ProbablyDoom
 
         bool IsPressed(KeyBinding binding)
         {
-            foreach (var key in binding.Keys)
-                if (IsDown(key)) return true;
+            // 用索引走，不用 foreach：Keys 是 IReadOnlyList（介面），foreach 會每次配置一個列舉器，這裡每個 tic 叫 10 次
+            var keys = binding.Keys;
+            for (var i = 0; i < keys.Count; i++)
+                if (IsDown(keys[i])) return true;
             return false;
         }
 

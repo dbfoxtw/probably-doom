@@ -20,15 +20,49 @@ namespace ProbablyDoom
     /// 掛在交易面板裡 Doom 畫面區的黑底上：記下「這一幀滑鼠在 Doom 畫面上按下了」（取得焦點，需求.md 決定 10）。
     /// 用 EventSystem 的按下事件而不是自己比矩形：EventSystem 只把按下交給最上層的介面，Doom 畫面被別的視窗蓋住時點那個視窗不算點到 Doom。
     /// EventSystem 在它的 Update 裡送事件，DoomRunner 在 LateUpdate 看，同一幀就對得上。
-    /// 也接住滾輪：不然滾輪會往上傳到列表的 ScrollRect，捲動藏在後面的列表。
+    ///
+    /// EventSystem 只把一個事件交給最近的一個處理者，我們接了按下，視窗根物件的 UIDragHandler（CustomUIBuilder.SetDraggable 加的）
+    /// 就收不到了：它的 OnPointerDown 負責把視窗拉到最上層（SetAsLastSibling、MoveFront）與 PaperPanelFocusStamp.Bump
+    /// （Esc 關哪個視窗看這個）。所以記下之後把同一個事件往上轉給父層，照 EventSystem 自己的規則找第一個處理者
+    /// （ExecuteHierarchy：Doom 畫面區 → body → Section → 視窗根，中間沒有別的按下處理者，所以是 UIDragHandler）。
+    /// 原本的事件停在我們這裡，轉一次就只觸發一次；UIDragHandler 的 OnPointerDown 不看事件內容，點列表本身時也是同樣的效果。
+    ///
+    /// 拖曳與滾輪接住、什麼都不做：沒接的話 EventSystem 會往上找到 UIDragHandler（從 Doom 畫面拖就拖動整個視窗）
+    /// 或列表的 ScrollRect（捲動藏在後面的列表）。拖動視窗照樣用標題列（上緣、客人名字那一帶）。
     /// </summary>
-    sealed class ScreenInput : MonoBehaviour, IPointerDownHandler, IScrollHandler
+    sealed class ScreenInput : MonoBehaviour, IPointerDownHandler, IScrollHandler,
+        IInitializePotentialDragHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         /// <summary>最近一次在 Doom 畫面上按下滑鼠的 Time.frameCount。</summary>
         internal int PointerDownFrame = -1;
 
-        public void OnPointerDown(PointerEventData eventData) => PointerDownFrame = Time.frameCount;
+        bool _forwardFailed;
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            PointerDownFrame = Time.frameCount;
+            try
+            {
+                var parent = transform.parent;
+                if (parent != null) ExecuteEvents.ExecuteHierarchy(parent.gameObject, eventData, ExecuteEvents.pointerDownHandler);
+            }
+            catch (System.Exception e)
+            {
+                // 轉不過去只是視窗不會被拉到最上層，Doom 照樣拿到焦點；只記一次
+                if (_forwardFailed) return;
+                _forwardFailed = true;
+                ProbablyDoomMod.Warning($"把點擊轉給交易面板的視窗失敗（視窗不會被拉到最上層）：{e.Message}");
+            }
+        }
 
         public void OnScroll(PointerEventData eventData) { }
+
+        public void OnInitializePotentialDrag(PointerEventData eventData) { }
+
+        public void OnBeginDrag(PointerEventData eventData) { }
+
+        public void OnDrag(PointerEventData eventData) { }
+
+        public void OnEndDrag(PointerEventData eventData) { }
     }
 }

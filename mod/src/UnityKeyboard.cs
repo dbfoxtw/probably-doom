@@ -28,7 +28,7 @@ namespace ProbablyDoom
     /// </summary>
     sealed class UnityKeyboard
     {
-        /// <summary>Unity 的鍵 → Doom 的鍵（上游 SilkToDoom 的對應，註解掉的上游也沒有）。</summary>
+        /// <summary>Unity 的鍵 → Doom 的鍵（上游 SilkToDoom 的對應，註解掉的上游也沒有；左右 Alt 是我們拿掉的）。</summary>
         static readonly (KeyCode Unity, DoomKey Doom)[] Map =
         {
             (KeyCode.Space, DoomKey.Space),
@@ -125,10 +125,9 @@ namespace ProbablyDoom
             (KeyCode.KeypadEquals, DoomKey.Equal),
             (KeyCode.LeftShift, DoomKey.LShift),
             (KeyCode.LeftControl, DoomKey.LControl),
-            (KeyCode.LeftAlt, DoomKey.LAlt),
             (KeyCode.RightShift, DoomKey.RShift),
             (KeyCode.RightControl, DoomKey.RControl),
-            (KeyCode.RightAlt, DoomKey.RAlt),
+            // 左右 Alt 不給 Doom（上游有）：按著 Alt 再按 F4 會變成 Alt+F4 關掉整個遊戲（DoomKeyboard.Ignored）。F4 本身照常給
             (KeyCode.Menu, DoomKey.Menu),
         };
 

@@ -57,6 +57,8 @@ namespace ProbablyDoom
         uint[] _raw, _rows, _thumb;
         bool _quit;
         int _ticsSinceThumb;
+        /// <summary>音樂有沒有建起來、沒有的話為什麼（「開始 Doom」那行 log 用）。</summary>
+        string _musicNote = "沒有";
 
         // 除錯統計（DoomRunner 每 10 秒取一次）
         internal long StatTics, StatTicTicks, StatTicMaxTicks, StatRenders, StatRenderTicks;
@@ -77,14 +79,14 @@ namespace ProbablyDoom
                 if (fellBack) ProbablyDoomMod.Log($"設定選的 WAD「{Settings.Wad}」不在 ModData 裡，改用自動挑的 {wad ?? "（沒有）"}");
                 if (wad == null)
                 {
-                    if (Status != State.NoWad) ProbablyDoomMod.Log($"ModData 裡沒有 WAD（{DataPaths.Display(DataFolder())}），等玩家放好再按 DOOM");
+                    if (Status != State.NoWad) ProbablyDoomMod.Log($"ModData 裡沒有 WAD（{DisplayFolder()}），等玩家放好再按 DOOM");
                     Status = State.NoWad;
                     return;
                 }
                 Start(host, wad);
                 Status = State.Running;
                 ProbablyDoomMod.Log($"開始 Doom：WAD {wad}（{_content.Wad.GameMode}）、解析度 {_video.Width}x{_video.Height}、" +
-                                    $"音效 {_sound.ClipCount} 個、音樂{(_music != null ? "有" : "沒有（讀不到 TimGM6mb.sf2）")}、" +
+                                    $"音效 {_sound.ClipCount} 個、音樂{_musicNote}、" +
                                     $"存檔在 ModData 的 saves/{WadPicker.SaveKey(wad)}/；花了 {sw.ElapsedMilliseconds} ms");
             }
             catch (Exception e)
@@ -93,11 +95,24 @@ namespace ProbablyDoom
             }
         }
 
-        /// <summary>ModData 資料夾的完整路徑（沒有 WAD 時給玩家看；ModHelper 會順手建好資料夾）。</summary>
+        /// <summary>ModData 資料夾的完整路徑（ModHelper 會順手建好資料夾）。</summary>
         internal static string DataFolder()
         {
             try { return ModHelper.GetModDataFolder(ProbablyDoomMod.ModId); }
             catch { return ""; }
+        }
+
+        /// <summary>
+        /// 給玩家看的 ModData 資料夾路徑（沒有 WAD 時的說明、log）：存檔資料夾在使用者資料夾底下的老位置時開頭換成 %USERPROFILE%，
+        /// 不是時照原樣（DataPaths.Display）。ModHelper.GetModDataFolder 用的是 Application.persistentDataPath，
+        /// Windows 上是使用者資料夾\AppData\LocalLow\＋app.info 的公司名與產品名（Questing Goose Studio\Probably Stolen）。
+        /// </summary>
+        internal static string DisplayFolder()
+        {
+            string home;
+            try { home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile); }
+            catch { home = null; }
+            return DataPaths.Display(DataFolder(), home);
         }
 
         void Start(GameObject host, string wad)
@@ -105,18 +120,18 @@ namespace ProbablyDoom
             var id = ProbablyDoomMod.ModId;
             var bytes = ModHelper.ReadModDataFileBytes(id, wad) ?? throw new InvalidOperationException($"讀不到 {wad}");
 
-            // Doom 自己的設定（決定 21）：玩家可以關著遊戲改 doom.cfg；解析度照 mod 設定（決定 5）
-            _config = Config.FromText(ModHelper.ReadModDataFileText(id, DataPaths.ConfigFile));
+            // Doom 自己的設定（決定 21）：玩家可以關著遊戲改 doom.cfg；解析度照 mod 設定（決定 5）。
+            // 還沒有 doom.cfg（或是空檔）時拿掉 Alt 側移（DoomKeyboard.ApplyNewConfigDefaults）；已經有的照玩家設的
+            var cfgText = ModHelper.ReadModDataFileText(id, DataPaths.ConfigFile);
+            _config = Config.FromText(cfgText);
+            if (string.IsNullOrEmpty(cfgText)) DoomKeyboard.ApplyNewConfigDefaults(_config);
             _config.video_highresolution = Settings.HighResolution;
 
             _args = new CommandLineArgs(new string[0]);
             _content = new GameContent(_args, new WadFile(WadPicker.EngineFileName(wad), bytes));
             _video = new FrameBufferVideo(_config, _content);
             _sound = new UnitySound(_config, _content, host);
-
-            var sf2 = ModHelper.ReadModFileBytes(id, "TimGM6mb.sf2");
-            if (sf2 != null) _music = new UnityMusic(new SynthMusic(_config, _content, sf2), host);
-            else ProbablyDoomMod.Warning("mod 資料夾裡讀不到 TimGM6mb.sf2，沒有音樂");
+            _music = StartMusic(id, host);
 
             var keys = new DoomKeyboard(_config);
             _keyboard = new UnityKeyboard(keys);
@@ -135,6 +150,34 @@ namespace ProbablyDoom
             // 小畫面第一次出現時也不會是沒初始化的貼圖。音樂這時還沒開始播（沒有焦點）
             _doom.Update();
             Render(true);
+        }
+
+        /// <summary>
+        /// 音樂（決定 15）：音色庫讀不到或壞掉（MeltySynth 解析時丟例外）時只是沒有音樂，Doom 照常（不讓整個 Doom 變成 Failed）。
+        /// 失敗時回傳 null，原因記一行 log，也記在 _musicNote 給「開始 Doom」那行 log 用。
+        /// </summary>
+        UnityMusic StartMusic(string id, GameObject host)
+        {
+            try
+            {
+                var sf2 = ModHelper.ReadModFileBytes(id, "TimGM6mb.sf2");
+                if (sf2 == null)
+                {
+                    _musicNote = "沒有（讀不到 TimGM6mb.sf2）";
+                    ProbablyDoomMod.Warning("mod 資料夾裡讀不到 TimGM6mb.sf2，沒有音樂");
+                    return null;
+                }
+                var synth = new SynthMusic(_config, _content, sf2);
+                var music = new UnityMusic(synth, host);
+                _musicNote = "有";
+                return music;
+            }
+            catch (Exception e)
+            {
+                _musicNote = "沒有（建立音樂失敗）";
+                ProbablyDoomMod.Warning($"建立音樂失敗（音色庫壞掉？），沒有音樂、Doom 照常：{e.GetType().Name}: {e.Message}");
+                return null;
+            }
         }
 
         static Texture2D NewTexture(int w, int h, string name)
@@ -251,6 +294,19 @@ namespace ProbablyDoom
             if (_config == null) return;
             try { ModHelper.WriteModDataFileText(ProbablyDoomMod.ModId, DataPaths.ConfigFile, _config.ToText()); }
             catch (Exception e) { ProbablyDoomMod.Warning($"存 {DataPaths.ConfigFile} 失敗：{e.Message}"); }
+        }
+
+        /// <summary>
+        /// mod 被停掉時（ProbablyDoomMod.OnDisable → DoomRunner.Shutdown）：音效、音樂的 AudioSource 都 Stop。
+        /// 遊戲只 Destroy 我們型別的 MonoBehaviour，AudioSource 留著；不停的話暫停中的聲音還掛著、串流的音樂還會叫合成。
+        /// 音效、音樂各自包 try：一邊出錯另一邊照樣停。
+        /// </summary>
+        internal void StopAudio()
+        {
+            try { if (_sound != null) _sound.StopAll(); }
+            catch (Exception e) { ProbablyDoomMod.Warning($"停音效失敗：{e.Message}"); }
+            try { if (_music != null) _music.Stop(); }
+            catch (Exception e) { ProbablyDoomMod.Warning($"停音樂失敗：{e.Message}"); }
         }
 
         /// <summary>出錯：停掉 Doom（之後不再跑），完整的例外記一次，聲音停掉。不丟回遊戲。</summary>
