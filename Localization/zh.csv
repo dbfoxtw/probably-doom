@@ -1,7 +1,7 @@
 # 这个 mod 设置窗口的标签和说明（ModHelper.GetLocalized；游戏的中文语系代码是 zh，只有简体，繁体由繁中 mod 显示时转换）。格式：key,值（\n 换行）。下拉的选项（Auto、WAD 文件名、640x400、320x200）照原样显示，不翻译。
 cfg_wad,WAD
-cfg_wad_tip,模组数据文件夹里有好几个 WAD 时玩哪一个。\nAuto（自动）＝依次选 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重启游戏才会出现在这里。
+cfg_wad_tip,ModData 文件夹里有好几个 WAD 时玩哪一个。\nAuto（自动）＝依次选 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重启游戏才会出现在这里。
 cfg_resolution,分辨率
 cfg_resolution_tip,Doom 画面的分辨率。\n640x400＝比较清楚。\n320x200＝原版的粗像素。\n重启游戏后生效。
 cfg_tablet_screen,平板电脑本体也显示画面
-cfg_tablet_screen_tip,玩的时候，桌上那台平板电脑的屏幕也跟着播小画面。
+cfg_tablet_screen_tip,玩的时候，桌上那台平板电脑也跟着播小画面。
