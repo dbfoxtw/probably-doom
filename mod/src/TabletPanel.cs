@@ -201,7 +201,7 @@ namespace ProbablyDoom
             _msgRoot.anchorMin = _msgRoot.anchorMax = _msgRoot.pivot = new Vector2(0.5f, 0.5f);
             _msgRoot.anchoredPosition = Vector2.zero;
 
-            // 1. 說明文字：置中、照句子換行（中文用 <nobr>，TextMarkup.Sentences）
+            // 1. 說明文字：置中、照句子換行（中文、日文用 <nobr> 只在標點後面換，TextMarkup.Sentences）
             _msgText = TabletUI.NewText(frame, _msgRoot, "Text", 0, 0, 0, 0, FontLoader.FontRole.Noto_Sans, MessageLayout.NoWadTextSize,
                 TextColor, TextAlignmentOptions.Center, true);
             _msgText.text = "";
@@ -435,7 +435,7 @@ namespace ProbablyDoom
             LayoutMessage(area);
         }
 
-        /// <summary>換說明的字：說明兩句（中文用 &lt;nobr&gt; 照句子換行）、路徑框、按鈕（有路徑才有）。</summary>
+        /// <summary>換說明的字：說明兩句（中文、日文用 &lt;nobr&gt; 只在標點後面換行，Strings.BreakAfter）、路徑框、按鈕（有路徑才有）。</summary>
         void RebuildMessage(Message message, string path, Strings strings)
         {
             _lastKind = message;
@@ -445,7 +445,7 @@ namespace ProbablyDoom
 
             var error = message == Message.Error;
             _msgText.fontSize = error ? MessageLayout.ErrorTextSize : MessageLayout.NoWadTextSize;
-            _msgText.text = TextMarkup.Sentences(error ? strings.Error : strings.NoWad, strings.Cjk);
+            _msgText.text = TextMarkup.Sentences(error ? strings.Error : strings.NoWad, strings.BreakAfter);
 
             // 路徑拿不到時：出錯畫面的框裡只寫 Player.log、沒有按鈕；沒有 WAD 的畫面不顯示框（沒有東西可以寫）
             var hasPath = path.Length > 0;

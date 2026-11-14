@@ -11,14 +11,15 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
+using System;
 using System.Text;
 
 namespace ProbablyDoom
 {
     /// <summary>
-    /// 沒有 WAD 與出錯畫面的字要在哪裡換行（需求.md 決定 29），做成 TextMeshPro 的標記。不碰 Unity，離線測試測同一份。
+    /// 沒有 WAD 與出錯畫面的字要在哪裡換行（需求.md 決定 29、37），做成 TextMeshPro 的標記。不碰 Unity，離線測試測同一份。
     ///
-    /// TMP 的中文每個字後面都能換行、英文在空白後面換，所以中文句子會在「DOOM：」「詳情」中間被拆開，
+    /// TMP 的中文、日文每個字後面都能換行、西文在空白後面換，所以中文句子會在「DOOM：」「詳情」中間被拆開，
     /// 路徑會在「Questing Goose Studio」的空白被拆開（看不出中間有空白）。做法：
     /// - 不能拆的一段用 &lt;nobr&gt;…&lt;/nobr&gt; 包起來（遊戲的 Unity.TextMeshPro.dll 認得這個標籤：
     ///   TMP_Text.ValidateHtmlTag 的標籤雜湊 43969／31169 設 m_isNonBreakingSpace、156816／144016 清掉，2026-11-12 反編譯確認）。
@@ -34,22 +35,22 @@ namespace ProbablyDoom
         /// <summary>零寬空白：段與段之間可以換行的地方。</summary>
         internal const char BreakHere = '​';
 
-        /// <summary>中文的逗號：說明文字只在它後面換行（逗號留在前一段的結尾，不會跑到下一行的開頭）。</summary>
-        const char Comma = '，';
-
         /// <summary>
-        /// 說明文字（每一行是一句，行之間是 '\n'）。中文（cjk）：每一行在「，」後面切段，每段用 &lt;nobr&gt; 包起來、段之間放零寬空白，
-        /// 只在「，」後面能換行；英文照原樣（TMP 在空白換行就好）。字串裡不能有 &lt; &gt;（我們自己的定稿字，沒有）。
+        /// 說明文字（每一行是一句，行之間是 '\n'）。breakAfter 是可以在它後面換行的字（中文「，」、日文「、。」，Strings.BreakAfterFor）：
+        /// 每一行在這些字後面切段（字留在前一段的結尾，不會跑到下一行的開頭），每段用 &lt;nobr&gt; 包起來、段之間放零寬空白，
+        /// 只在這些字後面能換行；breakAfter 是空的（西文）就照原樣（TMP 在空白換行就好）。
+        /// 字串裡不能有 &lt; &gt;（我們自己 csv 裡的字，沒有）。
         /// </summary>
-        internal static string Sentences(string text, bool cjk)
+        internal static string Sentences(string text, string breakAfter)
         {
-            if (string.IsNullOrEmpty(text) || !cjk) return text ?? "";
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(breakAfter)) return text ?? "";
+            var seps = breakAfter.ToCharArray();
             var sb = new StringBuilder(text.Length + 32);
             var lines = text.Split('\n');
             for (var i = 0; i < lines.Length; i++)
             {
                 if (i > 0) sb.Append('\n');
-                AppendSegments(sb, lines[i], Comma);
+                AppendSegments(sb, lines[i], seps);
             }
             return sb.ToString();
         }
@@ -62,7 +63,7 @@ namespace ProbablyDoom
         {
             if (string.IsNullOrEmpty(path)) return "";
             var sb = new StringBuilder(path.Length + 64);
-            AppendSegments(sb, path, '\\');
+            AppendSegments(sb, path, PathSeps);
             return sb.ToString();
         }
 
@@ -73,15 +74,22 @@ namespace ProbablyDoom
             return markup.Replace(NoBreakOpen, "").Replace(NoBreakClose, "").Replace(BreakHere.ToString(), "");
         }
 
-        /// <summary>一行字在每個 sep 後面切段（sep 留在前一段的結尾）：每段包 &lt;nobr&gt;，段之間放零寬空白。</summary>
-        static void AppendSegments(StringBuilder sb, string line, char sep)
+        /// <summary>路徑只在「\」後面換行（Path）。</summary>
+        static readonly char[] PathSeps = { '\\' };
+
+        /// <summary>
+        /// 一行字在 seps 裡的任何一個字後面切段（那個字留在前一段的結尾）：每段包 &lt;nobr&gt;，段之間放零寬空白。
+        /// 分隔字連在一起時（例如「、。」）算同一個切點，切在最後一個後面：中間不能換行，後面那個才不會落到下一行的開頭。
+        /// </summary>
+        static void AppendSegments(StringBuilder sb, string line, char[] seps)
         {
             var start = 0;
             var first = true;
             while (start < line.Length)
             {
-                var cut = line.IndexOf(sep, start);
+                var cut = line.IndexOfAny(seps, start);
                 var end = cut < 0 ? line.Length : cut + 1;
+                while (end < line.Length && Array.IndexOf(seps, line[end]) >= 0) end++;
                 if (!first) sb.Append(BreakHere);
                 sb.Append(NoBreakOpen).Append(line, start, end - start).Append(NoBreakClose);
                 first = false;

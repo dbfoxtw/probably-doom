@@ -1,0 +1,20 @@
+# Probably DOOM, Russian (ru): the mod's own texts. Translated from en.csv with AI help, not checked by a native speaker.
+# Same keys and order as en.csv (see its comments for where each text appears and how much space there is). Dropdown choices (Auto, the WAD file names, 640x400, 320x200) and DOOM's own text stay in English.
+#
+# Settings window: labels and tooltips.
+cfg_wad,WAD
+cfg_wad_tip,Какой WAD запускать, если в папке данных мода их несколько.\nAuto = DOOM2, DOOM, DOOM1, затем Freedoom.\nНовые файлы WAD появятся здесь после перезапуска игры.
+cfg_resolution,Разрешение
+cfg_resolution_tip,Разрешение экрана DOOM.\n640x400 = чётче.\n320x200 = крупные пиксели, как в оригинале.\nПрименяется после перезапуска игры.
+cfg_tablet_screen,Показывать DOOM на самом блокноте
+cfg_tablet_screen_tip,"Пока вы играете, блокнот на столе показывает уменьшенную копию экрана DOOM."
+cfg_mute_game_music,Отключать музыку и фоновые звуки игры, пока вы играете в DOOM
+cfg_mute_game_music_tip,"Пока вы играете в DOOM, фоновые звуки игры и кассетный проигрыватель отключаются.\nОни возвращаются, когда DOOM ставится на паузу."
+#
+# The store's Tablet window (блокнот). DOOM is the name of the button and is never translated.
+panel_button_tip,Переключение между DOOM и обычным экраном блокнота
+panel_no_wad,WAD не найден.\nПоложите WAD в эту папку и снова нажмите DOOM:
+panel_paused,Щёлкните, чтобы продолжить
+panel_error,DOOM остановлен из-за ошибки.\nПодробности — в этом файле:
+panel_copy_path,Копировать путь
+panel_copied,Скопировано

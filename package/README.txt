@@ -4,6 +4,7 @@ Probably DOOM v{version}
 A mod for Probably Stolen: play DOOM on the store's Tablet.
 The DOOM engine is ManagedDoom (C#, by Nobuaki Tanaka); music is synthesized with MeltySynth and the TimGM6mb sound font.
 This mod does NOT include any DOOM game data (WAD). Bring your own.
+The mod's text follows the game's language: English, Simplified Chinese, Russian, German, Japanese, French, Spanish and Polish.
 
 [Install]
 This is an official-format mod for the game and needs no permissions.

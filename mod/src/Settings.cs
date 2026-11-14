@@ -26,8 +26,10 @@ namespace ProbablyDoom
     /// wad 與 resolution 是 requiresRestart：Doom 整個遊戲執行期間只建一次（第一次切到 Doom 時），之後換 WAD、換解析度都要重開；
     /// tablet_screen 與 mute_game_music 每幀讀，按套用就生效（玩家從主選單改，回到店裡時就是新的值；
     /// 開發工具在店裡打開同一個設定視窗時也是馬上生效）。
-    /// 標籤與說明在 mod 的 Localization\en.csv、zh.csv（ModHelper.GetLocalized；遊戲在 Init 之後才讀這些檔，所以傳函式，
-    /// 打開設定視窗時才查）。繁中由繁中 mod 在顯示時把簡中轉過去（我們其他 mod 的設定也這樣）。
+    /// 標籤與說明在 mod 的 Localization\*.csv（cfg_ 開頭的 key，遊戲的 8 種語言＋手寫的繁中 zh-Hant.csv，需求.md 決定 34），
+    /// 用 Loc.Get 取（最長字串模式、遊戲是中文而且繁中 mod 有跑時用手寫的繁中，其他照遊戲的 GetLocalized）。
+    /// 遊戲在 Init 之後才讀這些檔，所以傳函式，打開設定視窗時才查。key 寫字面字串：monorepo 的 locale_check.py 掃 Loc.Get 呼叫裡字面的 key，檢查 en.csv 有沒有。
+    /// 段落名稱與下拉的選項照舊是英文（決定 24、34）。
     /// </summary>
     static class Settings
     {
@@ -55,16 +57,14 @@ namespace ProbablyDoom
             choices.AddRange(WadsAtStart);
 
             var cfg = ModConfig.For(ProbablyDoomMod.ModId);
-            _wad = cfg.Define("wad", WadPicker.Auto, Section, () => Loc("cfg_wad"), choices.ToArray(), () => Loc("cfg_wad_tip"),
+            _wad = cfg.Define("wad", WadPicker.Auto, Section, () => Loc.Get("cfg_wad"), choices.ToArray(), () => Loc.Get("cfg_wad_tip"),
                 requiresRestart: true);
-            _resolution = cfg.Define("resolution", HighRes, Section, () => Loc("cfg_resolution"), new[] { HighRes, LowRes },
-                () => Loc("cfg_resolution_tip"), requiresRestart: true);
-            _tabletScreen = cfg.Define("tablet_screen", true, Section, () => Loc("cfg_tablet_screen"), () => Loc("cfg_tablet_screen_tip"));
-            _muteGameMusic = cfg.Define("mute_game_music", true, Section, () => Loc("cfg_mute_game_music"),
-                () => Loc("cfg_mute_game_music_tip"));
+            _resolution = cfg.Define("resolution", HighRes, Section, () => Loc.Get("cfg_resolution"), new[] { HighRes, LowRes },
+                () => Loc.Get("cfg_resolution_tip"), requiresRestart: true);
+            _tabletScreen = cfg.Define("tablet_screen", true, Section, () => Loc.Get("cfg_tablet_screen"), () => Loc.Get("cfg_tablet_screen_tip"));
+            _muteGameMusic = cfg.Define("mute_game_music", true, Section, () => Loc.Get("cfg_mute_game_music"),
+                () => Loc.Get("cfg_mute_game_music_tip"));
         }
-
-        static string Loc(string key) => ModHelper.GetLocalized(ProbablyDoomMod.ModId, key);
 
         /// <summary>wad 設定的值（Auto 或檔名）。還沒讀設定時用 Auto。</summary>
         internal static string Wad => _wad != null ? _wad.Value : WadPicker.Auto;

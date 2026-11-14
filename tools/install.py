@@ -10,6 +10,9 @@ Probably Stolen_Data\Managed（只讀）。
   python tools/install.py install      編譯後裝到遊戲的 Mods\dbfoxtw.probably-doom\（整個資料夾清空重放）
   python tools/install.py uninstall    移除 Mods\dbfoxtw.probably-doom\（ModData 裡的 WAD、設定、Doom 的存檔保留）
   python tools/install.py install --debug  同上，再放除錯標記檔 debug（每 10 秒把 Doom 的耗時寫進 Player.log；install.bat 用這個）
+  python tools/install.py install --longest  同上（自動加 --debug），再放最長字串模式的標記檔 longest：mod 的每條介面字串
+                                       顯示英、德、法、西、俄、波蘭文裡最寬的那個，看版面擠不擠（install-longest.bat 用這個；
+                                       測完用 install.bat 重裝就拿掉）
   python tools/install.py package      編譯後打包給玩家的 zip（build\ProbablyStolen-ProbablyDoom-<版本>.zip；
                                        加上 package\README.txt 與 LICENSE，不放除錯標記檔）
 都可加 --game "遊戲資料夾"（也可設環境變數 PS_GAME_DIR）。
@@ -37,7 +40,7 @@ ASSETS = [ROOT / "mod" / "assets" / n for n in ("TimGM6mb.sf2", "TimGM6mb.txt", 
 
 class DoomMod(modkit.OfficialMod):
     """modkit 的 official_main 安裝、打包時不傳 extra，所以在這裡把音色庫與授權檔加進 fill（安裝、打包、stage 共用）。
-    Localization\\*.csv（設定視窗的文字）由 modkit 從 repo 根目錄的 Localization\\ 放；package\\README.txt 也在根目錄。"""
+    Localization\\*.csv（mod 的介面字串：8 種語言＋手寫的繁中 zh-Hant.csv）由 modkit 從 repo 根目錄的 Localization\\ 放；package\\README.txt 也在根目錄。"""
 
     def fill(self, dest: Path, version: str, extra: Callable[[Path], None] | None = None) -> None:
         def add_assets(d: Path) -> None:

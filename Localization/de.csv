@@ -1,0 +1,20 @@
+# Probably DOOM: this mod's text, German. Translated from en.csv with AI help, not checked by a native speaker. Format: key,value (\n = line break). Keys and order are the same as en.csv.
+# The settings dropdown choices (Auto, the WAD file names, 640x400 and 320x200) stay as they are. DOOM's own menus and messages are not part of this file.
+#
+# Settings window (gear on the main menu's Mods screen)
+cfg_wad,WAD
+cfg_wad_tip,Welche WAD-Datei gespielt wird, wenn im Datenordner der Mod mehr als eine liegt.\nAuto = DOOM2, DOOM, DOOM1, dann Freedoom.\nNeue WAD-Dateien erscheinen hier nach einem Neustart des Spiels.
+cfg_resolution,Auflösung
+cfg_resolution_tip,Die Bildauflösung von DOOM.\n640x400 = schärfer.\n320x200 = die originalen groben Pixel.\nWird nach einem Neustart des Spiels wirksam.
+cfg_tablet_screen,DOOM auf dem Tablet selbst anzeigen
+cfg_tablet_screen_tip,"Während du spielst, zeigt das Tablet auf dem Tisch eine kleine Kopie des DOOM-Bildschirms."
+cfg_mute_game_music,Spielmusik und Hintergrundgeräusche beim Spielen stummschalten
+cfg_mute_game_music_tip,"Während du DOOM spielst, sind die Hintergrundgeräusche des Spiels und der Kassettenrekorder stummgeschaltet.\nSobald DOOM pausiert, sind sie wieder zu hören."
+#
+# The store's Tablet window (DOOM is the button's name and is never translated)
+panel_button_tip,Zwischen DOOM und dem gewohnten Tablet-Bildschirm wechseln
+panel_no_wad,Keine WAD-Datei gefunden.\nLeg eine in diesen Ordner und klick dann erneut auf DOOM:
+panel_paused,Zum Weiterspielen klicken
+panel_error,DOOM wurde wegen eines Fehlers beendet.\nDetails stehen in dieser Datei:
+panel_copy_path,Pfad kopieren
+panel_copied,Kopiert

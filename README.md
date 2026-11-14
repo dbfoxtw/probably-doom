@@ -51,7 +51,7 @@ DOOM、DOOM II、Freedoom 都一樣：
 ## 相容性與注意事項
 
 - 玩 DOOM 的時候，其他 mod 的快捷鍵也可能暫時不動作。
-- 遊戲的中文只有簡體，這個 mod 的介面也是簡體字；裝了[繁體中文 mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3828909380) 會變成繁體。DOOM 本身的文字是英文，不會翻譯。
+- mod 的文字跟著遊戲的語言：英文、簡體中文、繁體中文（搭配[繁中 mod](https://steamcommunity.com/sharedfiles/filedetails/?id=3828909380)）、俄文、德文、日文、法文、西班牙文、波蘭文。DOOM 本身的文字是英文，不會翻譯。
 - 換 WAD、改解析度要重開遊戲才生效。DOOM 的存檔每個 WAD 分開放。
 - 滑鼠只能開火，不能轉向。
 - Alt 鍵不會傳給 DOOM（免得按到 Alt+F4 關掉遊戲），所以側移用 A、D。
@@ -60,9 +60,9 @@ DOOM、DOOM II、Freedoom 都一樣：
 ## 開發
 
 - 需要 .NET SDK 8 以上、Python 3.10 以上，和裝好的 Probably Stolen：編譯時參考遊戲的 `Probably Stolen_Data\Managed`（只讀，不附進 mod）。遊戲不在預設位置時加 `--game "遊戲資料夾"`，或設環境變數 `PS_GAME_DIR`。
-- `python tools/install.py build` 編譯；`install` 裝到遊戲的 `Mods\dbfoxtw.probably-doom\`（`install.bat` 是除錯模式的安裝：每 10 秒把 DOOM 的耗時寫進 `Player.log`）；`uninstall` 移除；`package` 打包成 `build\ProbablyStolen-ProbablyDoom-<版本>.zip`。
+- `python tools/install.py build` 編譯；`install` 裝到遊戲的 `Mods\dbfoxtw.probably-doom\`（`install.bat` 是除錯模式的安裝：每 10 秒把 DOOM 的耗時寫進 `Player.log`）；`uninstall` 移除；`package` 打包成 `build\ProbablyStolen-ProbablyDoom-<版本>.zip`。`install-longest.bat` 是最長字串模式的安裝：每條字顯示西文語言裡最寬的那個，看版面擠不擠；測完用 `install.bat` 重裝就拿掉。
 - 離線測試：把 Freedoom 0.13.0 的 `freedoom1.wad`、`freedoom2.wad` 放進 `testdata/`（不進 repo），執行 `dotnet run --project verify -c Release`。
-- 結構：`engine/ManagedDoom`、`engine/MeltySynth` 是上游的原始碼（改了什麼見 [VENDOR.md](VENDOR.md)）；`mod/src` 是接進遊戲的那一層，`mod/src/Core` 是不碰 Unity 的邏輯（離線測試也用）；`verify` 是離線測試；`Localization` 是設定視窗的文字；`package/README.txt` 是 zip 附的說明；`tools` 是建置、安裝、打包。
+- 結構：`engine/ManagedDoom`、`engine/MeltySynth` 是上游的原始碼（改了什麼見 [VENDOR.md](VENDOR.md)）；`mod/src` 是接進遊戲的那一層，`mod/src/Core` 是不碰 Unity 的邏輯（離線測試也用）；`verify` 是離線測試；`Localization` 是 mod 的介面字串（8 種語言＋手寫的繁中 `zh-Hant.csv`）；`package/README.txt` 是 zip 附的說明；`tools` 是建置、安裝、打包。
 
 ## 授權與致謝
 
@@ -124,6 +124,7 @@ To change the keys, close the game and edit `doom.cfg` in the folder above with 
 ### Compatibility and notes
 
 - While you play DOOM, other mods' hotkeys may not work either.
+- The mod's text follows the game's language: English, Simplified Chinese, Russian, German, Japanese, French, Spanish and Polish.
 - Changing the WAD or the resolution takes effect after restarting the game. DOOM saves are kept separately for each WAD.
 - The mouse only fires; it doesn't turn.
 - Alt isn't passed to DOOM (so you can't close the game with Alt+F4 by accident); strafe with A/D instead.
@@ -132,9 +133,9 @@ To change the keys, close the game and edit `doom.cfg` in the folder above with 
 ### Building
 
 - Needs .NET SDK 8+, Python 3.10+ and an installed copy of Probably Stolen: the build references the game's `Probably Stolen_Data\Managed` (read-only, not shipped with the mod). If the game isn't in the default place, add `--game "game folder"` or set the `PS_GAME_DIR` environment variable.
-- `python tools/install.py build` builds; `install` installs into the game's `Mods\dbfoxtw.probably-doom\` (`install.bat` installs in debug mode, which writes DOOM's timings to `Player.log` every 10 seconds); `uninstall` removes it; `package` makes `build\ProbablyStolen-ProbablyDoom-<version>.zip`.
+- `python tools/install.py build` builds; `install` installs into the game's `Mods\dbfoxtw.probably-doom\` (`install.bat` installs in debug mode, which writes DOOM's timings to `Player.log` every 10 seconds); `uninstall` removes it; `package` makes `build\ProbablyStolen-ProbablyDoom-<version>.zip`. `install-longest.bat` installs in longest-text mode: every text shows the widest of the Latin/Cyrillic languages, to check that it fits; reinstall with `install.bat` afterwards to turn it off.
 - Offline tests: put `freedoom1.wad` and `freedoom2.wad` from Freedoom 0.13.0 in `testdata/` (not in the repository) and run `dotnet run --project verify -c Release`.
-- Layout: `engine/ManagedDoom` and `engine/MeltySynth` are the upstream sources (what we changed is in [VENDOR.md](VENDOR.md), in Chinese); `mod/src` hooks into the game, and `mod/src/Core` is the logic that doesn't touch Unity (also used by the offline tests); `verify` holds the offline tests; `Localization` holds the settings window's text; `package/README.txt` is the readme in the zip; `tools` builds, installs and packages.
+- Layout: `engine/ManagedDoom` and `engine/MeltySynth` are the upstream sources (what we changed is in [VENDOR.md](VENDOR.md), in Chinese); `mod/src` hooks into the game, and `mod/src/Core` is the logic that doesn't touch Unity (also used by the offline tests); `verify` holds the offline tests; `Localization` holds the mod's UI text (the game's 8 languages plus hand-written Traditional Chinese in `zh-Hant.csv`); `package/README.txt` is the readme in the zip; `tools` builds, installs and packages.
 
 ### License and credits
 

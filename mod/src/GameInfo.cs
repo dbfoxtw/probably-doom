@@ -24,7 +24,8 @@ namespace ProbablyDoom
         /// <summary>
         /// 繁中 mod 這次有沒有真的跑起來：ModLoader.Mods 裡 ID 相符而且 IsEnabled（Init／OnEnable 成功才是 true）。
         /// 不用 ModLoader.IsModEnabled：它只看玩家勾選的清單，剛勾還沒重開、掃描被拒、Init 失敗時都還是 true。
-        /// 不快取：本 mod Init 時繁中 mod 可能還沒載入；只在換語言時查。
+        /// 不快取：本 mod Init 時繁中 mod 可能還沒載入。Loc.Get（遊戲是中文時挑手寫的繁中）與 DoomRunner.UpdateLanguage（每秒看一次要不要換字）
+        /// 都用這個，偵測只有這一套。
         /// </summary>
         internal static bool ZhHantModRunning()
         {
@@ -32,7 +33,7 @@ namespace ProbablyDoom
             catch { return false; }
         }
 
-        /// <summary>遊戲目前的語系代碼（en、zh…）；Localization 還沒初始化時是空字串。</summary>
+        /// <summary>遊戲目前的語系代碼（en、zh、ja…）；Localization 還沒初始化時是空字串。Loc.Get 與 DoomRunner.UpdateLanguage 都用這個。</summary>
         internal static string LocaleCode()
         {
             try { return LocHelper.GetCurrentLocaleCode() ?? ""; }

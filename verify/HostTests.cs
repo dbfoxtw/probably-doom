@@ -34,7 +34,7 @@ namespace ProbablyDoom.Verify
             Run("7d. 焦點規則", TestFocus);
             Run("7e. 擋快捷鍵的判斷", TestHotkeys);
             Run("7f. 35 Hz 計時", TestTicClock);
-            Run("7g. 語言與畫面上的字", TestStrings);
+            Run("7g. 語言與畫面上的字（手寫繁中、最長字串模式、Strings.Build、Localization 的 csv）", TestStrings);
             Run("7h. DOOM 按鈕的位置與三段拼法、畫面 4:3、平板本體的螢幕位置", TestLayout);
             Run("7i. 鍵盤（按著的鍵、BuildTicCmd、全部放開）", TestKeyboard);
             Run("7j. 不給 Doom 的 Alt、新的 doom.cfg 的側移鍵", TestAltAndNewConfig);
@@ -193,38 +193,145 @@ namespace ProbablyDoom.Verify
             Check(c.Advance(0.02) == 0 && c.Advance(0.01) == 1, "0.02 秒不到一個 tic，再加 0.01 秒就到了");
         }
 
+        /// <summary>Strings.Build 取的 6 個 key（交易面板的字）。</summary>
+        static readonly string[] PanelKeys =
+            { "panel_button_tip", "panel_no_wad", "panel_paused", "panel_error", "panel_copy_path", "panel_copied" };
+
+        /// <summary>repo 的 Localization\ 裡可能有的檔：遊戲的 8 種語言＋手寫的繁中。en、zh、zh-Hant 一定要有，其他翻好了才有。</summary>
+        static readonly string[] LocaleFiles = { "en", "zh", "zh-Hant", "ru", "de", "ja", "fr", "es", "pl" };
+
+        /// <summary>
+        /// 照遊戲的 ModLoader.LoadLocalization 讀 repo 的 Localization\&lt;語言&gt;.csv（monorepo 的 locale_check.py 同一套規則）：
+        /// 一行一筆、空白行與 TrimStart 後 # 開頭的是註解、第一個逗號前（去掉前後空白）是 key，值去掉前後空白、
+        /// 前後都是 " 時拿掉並把 "" 換成 "、字面的 \n 換成換行。檔不在回傳 null。
+        /// </summary>
+        static Dictionary<string, string> ReadLocale(string lang)
+        {
+            var path = Path.Combine(_root, "Localization", lang + ".csv");
+            if (!File.Exists(path)) return null;
+            var table = new Dictionary<string, string>();
+            foreach (var line in File.ReadAllLines(path, System.Text.Encoding.UTF8))
+            {
+                if (line.Trim().Length == 0 || line.TrimStart().StartsWith("#")) continue;
+                var comma = line.IndexOf(',');
+                if (comma < 0) continue;
+                var key = line.Substring(0, comma).Trim();
+                if (key.Length == 0) continue;
+                var text = line.Substring(comma + 1).Trim();
+                if (text.Length >= 2 && text[0] == '"' && text[text.Length - 1] == '"') text = text.Substring(1, text.Length - 2).Replace("\"\"", "\"");
+                table[key] = text.Replace("\\n", "\n");
+            }
+            return table;
+        }
+
+        /// <summary>repo 裡有的語言 → 讀出來的 csv（照 LocaleFiles 的順序）。</summary>
+        static List<KeyValuePair<string, Dictionary<string, string>>> ReadLocales()
+        {
+            var list = new List<KeyValuePair<string, Dictionary<string, string>>>();
+            foreach (var lang in LocaleFiles)
+            {
+                var table = ReadLocale(lang);
+                if (table != null) list.Add(new KeyValuePair<string, Dictionary<string, string>>(lang, table));
+            }
+            return list;
+        }
+
+        /// <summary>從 csv 建一份 Strings（離線測試用的 getter：沒有這個 key 回傳 key 本身，和遊戲一樣）。檔名當語系代碼（zh-Hant 也照 zh 換行）。</summary>
+        static Strings FromCsv(string lang, Dictionary<string, string> table) =>
+            Strings.Build(k => table.TryGetValue(k, out var v) ? v : k, lang, false);
+
         static void TestStrings()
         {
-            Check(Strings.PickLang("en", true) == Lang.En, "英文介面 → 英文（繁中 mod 在跑也一樣：英文字型沒有中文字）");
-            Check(Strings.PickLang("zh", false) == Lang.ZhHans, "中文、沒有繁中 mod → 簡中");
-            Check(Strings.PickLang("zh", true) == Lang.ZhHant, "中文＋繁中 mod 在跑 → 繁中");
-            Check(Strings.PickLang("ja", true) == Lang.En && Strings.PickLang("", false) == Lang.En && Strings.PickLang(null, false) == Lang.En,
-                  "其他語言、還沒初始化 → 英文");
-            var en = Strings.En;
-            var ascii = new[] { en.ButtonTooltip, en.NoWad, en.Paused, en.Error, en.CopyPath, en.Copied }.All(s => s.All(ch => ch < 128));
-            Check(ascii, "英文的字只用 ASCII（正式版的英文字型缺很多符號）");
-            foreach (var s in Strings.All)
+            // ── 中文時用不用手寫的繁中（LocPick.UseZhHant）──
+            Check(LocPick.UseZhHant("zh", true, true), "中文＋繁中 mod 在跑＋zh-Hant.csv 有這個 key → 手寫的繁中");
+            Check(!LocPick.UseZhHant("zh", false, true), "中文、沒有繁中 mod → 不用（走遊戲的 zh.csv）");
+            Check(!LocPick.UseZhHant("zh", true, false), "zh-Hant.csv 沒有這個 key → 不用（走遊戲的查法，繁中 mod 再轉）");
+            Check(!LocPick.UseZhHant("en", true, true) && !LocPick.UseZhHant("ja", true, true),
+                  "不是中文 → 不用（繁中 mod 在跑也一樣：其他語言的字型沒有中文字）");
+            Check(!LocPick.UseZhHant("", true, true) && !LocPick.UseZhHant(null, true, true), "還沒初始化（空字串、null）→ 不用");
+
+            // ── 最長字串模式（LocPick.Widest／TotalWidth；寬度用字數當假的字型）──
+            Func<string, float> len = s => s.Length;
+            Check(LocPick.TotalWidth("abc\nde", len) == 5, "多行的寬度是各行的總和，換行本身不算");
+            var multi = new Dictionary<string, string> { ["en"] = "aaaaa\nb", ["de"] = "aaaa\naaaa" };
+            Check(LocPick.Widest(multi, len) == "de", "多行比總和：en 5＋1、de 4＋4 → de（只看最寬那一行會挑 en）");
+            Check(LocPick.Widest(new Dictionary<string, string> { ["fr"] = "abc", ["en"] = "xyz" }, len) == "en",
+                  "同寬取 Western 前面的（en 在 fr 前面）");
+            Check(LocPick.Widest(new Dictionary<string, string> { ["pl"] = "abc", ["de"] = "xyz" }, len) == "de",
+                  "同寬照 Western 的順序（de 在 pl 前面），不照字典的順序");
+            Check(LocPick.Widest(new Dictionary<string, string> { ["ru"] = "abcdef", ["es"] = "ab" }, len) == "ru", "比得出寬窄時取寬的");
+            Check(LocPick.Widest(new Dictionary<string, string> { ["ja"] = "とても長い日本語の文字列", ["zh"] = "很長很長的中文" }, len) == null &&
+                  LocPick.Widest(new Dictionary<string, string>(), len) == null && LocPick.Widest(null, len) == null,
+                  "沒有西文的語言（只有 ja、zh，或空的）→ null（改走一般的查法）");
+            Check(LocPick.Format("a{0}", new object[] { 1 }) == "a1" && LocPick.Format("{x}", null) == "{x}" &&
+                  LocPick.Format("{0", new object[] { 1 }) == "{0", "Format：有參數才代入、格式壞了回傳原字串");
+
+            // ── Strings.Build：6 個欄位各拿對 key，換行方式照語言 ──
+            var asked = new List<string>();
+            var fake = Strings.Build(k => { asked.Add(k); return "<" + k + ">"; }, "en", false);
+            Check(fake.ButtonTooltip == "<panel_button_tip>" && fake.NoWad == "<panel_no_wad>" && fake.Paused == "<panel_paused>" &&
+                  fake.Error == "<panel_error>" && fake.CopyPath == "<panel_copy_path>" && fake.Copied == "<panel_copied>",
+                  "Build：每個欄位用自己的 key（panel_button_tip、panel_no_wad、panel_paused、panel_error、panel_copy_path、panel_copied）");
+            Check(asked.OrderBy(k => k, StringComparer.Ordinal).SequenceEqual(PanelKeys.OrderBy(k => k, StringComparer.Ordinal)),
+                  $"Build 只取這 6 個 key、各一次：{string.Join("、", asked)}");
+            Check(Strings.Build(k => k, "zh", false).BreakAfter == "，", "zh → 只在「，」後面換行");
+            Check(Strings.Build(k => k, "ja", false).BreakAfter == "、。", "ja → 只在「、」「。」後面換行");
+            Check(new[] { "en", "de", "ru", "fr", "es", "pl", "" }.All(c => Strings.Build(k => k, c, false).BreakAfter == "") &&
+                  Strings.Build(k => k, null, false).BreakAfter == "",
+                  "en、de、ru、fr、es、pl、還沒初始化 → 不處理（TMP 照空白換行）");
+            Check(Strings.Build(k => k, "zh", true).BreakAfter == "" && Strings.Build(k => k, "ja", true).BreakAfter == "",
+                  "最長字串模式（拿到的是西文）→ 不處理，中文、日文介面也一樣");
+
+            // ── repo 的 Localization\*.csv ──
+            var locales = ReadLocales();
+            var tables = locales.ToDictionary(p => p.Key, p => p.Value);
+            foreach (var must in new[] { "en", "zh", "zh-Hant" })
             {
+                Check(tables.TryGetValue(must, out var t) && PanelKeys.All(k => t.ContainsKey(k) && t[k].Trim().Length > 0),
+                      $"Localization\\{must}.csv 在，而且交易面板的 6 個 key 都有字");
+            }
+            if (!tables.TryGetValue("en", out var en)) return;
+            var missing = LocaleFiles.Where(l => !tables.ContainsKey(l)).ToList();
+            Check(missing.Count == 0, "8 種語言的 csv 都在（決定 34）" + (missing.Count > 0 ? $"：少了 {string.Join("、", missing)}" : ""));
+            foreach (var p in locales)
+            {
+                if (p.Key == "en") continue;
+                var extra = p.Value.Keys.Except(en.Keys).ToList();
+                var lack = en.Keys.Except(p.Value.Keys).ToList();
+                Check(extra.Count == 0 && lack.Count == 0,
+                      $"{p.Key}.csv 的 key 和 en.csv 一樣" + (lack.Count > 0 ? $"（少了 {string.Join("、", lack)}）" : "") +
+                      (extra.Count > 0 ? $"（多了 {string.Join("、", extra)}）" : ""));
+            }
+            Check(en.Values.All(v => v.All(ch => ch < 128)), "英文的字只用 ASCII（正式版的英文字型缺很多符號）");
+            foreach (var p in locales)
+            {
+                var s = FromCsv(p.Key, p.Value);
                 var noWad = s.NoWad.Split('\n');
                 var error = s.Error.Split('\n');
-                Check(noWad.Length == 2 && error.Length == 2 && noWad.Concat(error).All(l => l.Length > 0) &&
-                      !string.IsNullOrEmpty(s.ButtonTooltip) && !string.IsNullOrEmpty(s.Paused) && !string.IsNullOrEmpty(s.CopyPath) && !string.IsNullOrEmpty(s.Copied),
-                      $"沒有 WAD、出錯的說明都是兩句（中間是換行）：{noWad[0]}／{error[0]}");
+                Check(noWad.Length == 2 && error.Length == 2 && noWad.Concat(error).All(l => l.Trim().Length > 0),
+                      $"{p.Key}：沒有 WAD、出錯的說明都是兩句（中間是換行）：{noWad[0]}／{error[0]}");
             }
-            Check(!Strings.En.Cjk && Strings.ZhHans.Cjk && Strings.ZhHant.Cjk, "中文照句子換行（Cjk），英文不用");
-            // 使用者 2026-11-12 看示意圖定的字（需求.md 決定 29）
-            Check(Strings.En.NoWad == "No WAD found.\nPut one in this folder, then press DOOM again:" &&
-                  Strings.En.Error == "DOOM stopped because of an error.\nDetails are in this file:" &&
-                  Strings.En.CopyPath == "Copy path" && Strings.En.Copied == "Copied",
-                  "英文是定稿的字");
-            Check(Strings.ZhHant.NoWad == "找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：" &&
-                  Strings.ZhHant.Error == "DOOM 出錯停止了。\n詳情寫在這個檔案：" &&
-                  Strings.ZhHant.CopyPath == "複製路徑" && Strings.ZhHant.Copied == "已複製",
-                  "繁中是定稿的字");
-            Check(Strings.ZhHans.NoWad == "找不到 WAD。\n放一个进这个文件夹，再按一次 DOOM：" &&
-                  Strings.ZhHans.Error == "DOOM 出错停止了。\n详情写在这个文件里：" &&
-                  Strings.ZhHans.CopyPath == "复制路径" && Strings.ZhHans.Copied == "已复制",
-                  "簡中是定稿的字");
+            // 使用者 2026-11-12 看示意圖定的字（需求.md 決定 29）：csv 讀出來的要和定稿的一樣
+            var enS = FromCsv("en", en);
+            Check(enS.NoWad == "No WAD found.\nPut one in this folder, then press DOOM again:" &&
+                  enS.Error == "DOOM stopped because of an error.\nDetails are in this file:" &&
+                  enS.Paused == "Click to continue" && enS.CopyPath == "Copy path" && enS.Copied == "Copied" &&
+                  enS.ButtonTooltip == "Switch between DOOM and the Tablet's usual screen",
+                  "en.csv 是定稿的字");
+            if (tables.TryGetValue("zh-Hant", out var zht))
+            {
+                var s = FromCsv("zh", zht);
+                Check(s.NoWad == "找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：" && s.Error == "DOOM 出錯停止了。\n詳情寫在這個檔案：" &&
+                      s.Paused == "點一下繼續" && s.CopyPath == "複製路徑" && s.Copied == "已複製",
+                      "zh-Hant.csv 是定稿的字");
+            }
+            if (tables.TryGetValue("zh", out var zh))
+            {
+                var s = FromCsv("zh", zh);
+                Check(s.NoWad == "找不到 WAD。\n放一个进这个文件夹，再按一次 DOOM：" && s.Error == "DOOM 出错停止了。\n详情写在这个文件里：" &&
+                      s.Paused == "点击继续" && s.CopyPath == "复制路径" && s.Copied == "已复制",
+                      "zh.csv 是定稿的字");
+            }
         }
 
         static void TestAltAndNewConfig()
@@ -530,25 +637,47 @@ namespace ProbablyDoom.Verify
             return true;
         }
 
+        /// <summary>每個零寬空白（可以換行的地方）前面都是 chars 裡的某一個字＋&lt;/nobr&gt;（日文的「、」「。」）。</summary>
+        static bool BreaksOnlyAfterAny(string markup, string chars)
+        {
+            var close = TextMarkup.NoBreakClose;
+            for (var i = markup.IndexOf(TextMarkup.BreakHere); i >= 0; i = markup.IndexOf(TextMarkup.BreakHere, i + 1))
+            {
+                var at = i - close.Length;
+                if (at < 1 || string.CompareOrdinal(markup, at, close, 0, close.Length) != 0 || chars.IndexOf(markup[at - 1]) < 0) return false;
+            }
+            return true;
+        }
+
         static void TestMarkup()
         {
             var zwsp = TextMarkup.BreakHere.ToString();
-            Check(TextMarkup.Sentences(Strings.ZhHant.NoWad, true) ==
+            Check(TextMarkup.Sentences("找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：", Strings.ZhBreaks) ==
                   "<nobr>找不到 WAD。</nobr>\n<nobr>放一個進這個資料夾，</nobr>" + zwsp + "<nobr>再按一次 DOOM：</nobr>",
                   "繁中「找不到 WAD」：每句、每個「，」後面切一段包 <nobr>，段之間放零寬空白");
-            foreach (var s in Strings.All)
+            Check(TextMarkup.Sentences("WAD が見つかりません。\nこのフォルダーに入れて、もう一度 DOOM を押してください。続き", Strings.JaBreaks) ==
+                  "<nobr>WAD が見つかりません。</nobr>\n<nobr>このフォルダーに入れて、</nobr>" + zwsp +
+                  "<nobr>もう一度 DOOM を押してください。</nobr>" + zwsp + "<nobr>続き</nobr>",
+                  "日文：「、」「。」後面都切段（行尾的「。」不多出一個空段），段之間放零寬空白");
+            Check(TextMarkup.Sentences("はい、。次", Strings.JaBreaks) == "<nobr>はい、。</nobr>" + zwsp + "<nobr>次</nobr>",
+                  "分隔字連在一起（「、。」）算同一個切點：中間不能換行，「。」不會落到下一行的開頭");
+            Check(TextMarkup.Sentences("a, b. c", "") == "a, b. c" && TextMarkup.Sentences("a, b", null) == "a, b",
+                  "不處理（空的、null）→ 照原樣");
+            // repo 裡每個語言的說明，照它的換行方式（檔名當語系代碼，zh-Hant 也照 zh）
+            foreach (var p in ReadLocales())
             {
+                var s = FromCsv(p.Key, p.Value);
                 foreach (var text in new[] { s.NoWad, s.Error })
                 {
-                    var m = TextMarkup.Sentences(text, s.Cjk);
-                    if (!s.Cjk)
+                    var m = TextMarkup.Sentences(text, s.BreakAfter);
+                    if (s.BreakAfter.Length == 0)
                     {
-                        Check(m == text, $"英文照原樣（TMP 在空白換行）：{text.Split('\n')[0]}");
+                        Check(m == text, $"{p.Key}：照原樣（TMP 在空白換行）：{text.Split('\n')[0]}");
                         continue;
                     }
                     var outside = OutsideNoBreak(m);
-                    Check(TextMarkup.Plain(m) == text && outside.All(c => c == TextMarkup.BreakHere || c == '\n') && BreaksOnlyAfter(m, "，"),
-                          $"{text.Split('\n')[0]}：拼回來等於原字串、<nobr> 外面只有零寬空白與換行、只在「，」後面能換行");
+                    Check(TextMarkup.Plain(m) == text && outside.All(c => c == TextMarkup.BreakHere || c == '\n') && BreaksOnlyAfterAny(m, s.BreakAfter),
+                          $"{p.Key}：{text.Split('\n')[0]}：拼回來等於原字串、<nobr> 外面只有零寬空白與換行、只在「{string.Join("」「", s.BreakAfter.ToCharArray())}」後面能換行");
                 }
             }
 
@@ -566,7 +695,8 @@ namespace ProbablyDoom.Verify
                   "完整路徑（有 \\n 開頭的資料夾名）照原字串，不會被當成換行");
             Check(TextMarkup.Path(@"\\server\share\Player.log").Replace("<nobr>", "").Replace("</nobr>", "").Replace(zwsp, "") == @"\\server\share\Player.log",
                   "網路路徑（\\\\ 開頭）拼回來一樣");
-            Check(TextMarkup.Path("") == "" && TextMarkup.Path(null) == "" && TextMarkup.Sentences("", true) == "", "空字串 → 空字串");
+            Check(TextMarkup.Path("") == "" && TextMarkup.Path(null) == "" && TextMarkup.Sentences("", Strings.ZhBreaks) == "" &&
+                  TextMarkup.Sentences(null, Strings.JaBreaks) == "", "空字串、null → 空字串");
         }
 
         static void TestMessageLayout()

@@ -1,0 +1,20 @@
+# 這個 mod 的文字（手寫的繁中：遊戲是中文、繁中 mod 有跑時由 mod/src/Loc.cs 用，其他時候用 zh.csv）。格式：key,值（\n 換行），key 與順序同 en.csv。
+# 下拉的選項（Auto、WAD 檔名、640x400、320x200）照原樣顯示，不翻譯。DOOM 本身的選單與訊息不在這裡。
+#
+# 設定視窗的標籤與說明
+cfg_wad,WAD
+cfg_wad_tip,ModData 資料夾裡有好幾個 WAD 時玩哪一個。\nAuto（自動）＝依序選 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重開遊戲才會出現在這裡。
+cfg_resolution,解析度
+cfg_resolution_tip,DOOM 畫面的解析度。\n640x400＝比較清楚。\n320x200＝原版的粗像素。\n重開遊戲後生效。
+cfg_tablet_screen,平板電腦本體也顯示畫面
+cfg_tablet_screen_tip,玩的時候，桌上那台平板電腦也跟著播小畫面。
+cfg_mute_game_music,玩的時候遊戲的音樂和環境音靜音
+cfg_mute_game_music_tip,玩 DOOM 的時候，店裡的環境音和卡帶播放器靜音。\nDOOM 暫停時恢復。
+#
+# 店裡的平板電腦（交易面板）：DOOM 按鈕的提示框、沒有 WAD、暫停、出錯、複製路徑
+panel_button_tip,在 DOOM 和平板電腦原本的畫面之間切換
+panel_no_wad,找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：
+panel_paused,點一下繼續
+panel_error,DOOM 出錯停止了。\n詳情寫在這個檔案：
+panel_copy_path,複製路徑
+panel_copied,已複製

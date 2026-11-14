@@ -1,4 +1,7 @@
-# Labels and tooltips of this mod's settings window (ModHelper.GetLocalized). Format: key,value (\n = line break). The dropdown choices (Auto, the WAD file names, 640x400 and 320x200) are shown as they are and are not translated.
+# This mod's text (ModHelper.GetLocalized, picked by mod/src/Loc.cs). Format: key,value (\n = line break). Keys and order are the same in every language.
+# The settings dropdown choices (Auto, the WAD file names, 640x400 and 320x200) are shown as they are and are not translated. DOOM's own menus and messages are not part of this file.
+#
+# Settings window (gear on the main menu's Mods screen): labels and tooltips. The tooltip box wraps long lines by itself.
 cfg_wad,WAD
 cfg_wad_tip,Which WAD to play when the mod's data folder has more than one.\nAuto = DOOM2, DOOM, DOOM1, then Freedoom.\nNew WAD files show up here after restarting the game.
 cfg_resolution,Resolution
@@ -7,3 +10,17 @@ cfg_tablet_screen,Show DOOM on the Tablet itself
 cfg_tablet_screen_tip,"While you play, the Tablet on the desk shows a small copy of the DOOM screen."
 cfg_mute_game_music,Mute the game's music and background sound while playing
 cfg_mute_game_music_tip,"While you play DOOM, the game's background sound and the Cassette Player are muted.\nThey come back when DOOM pauses."
+#
+# The store's Tablet window. DOOM is the name of the button and is never translated.
+# Tooltip of the DOOM button at the top of the Tablet screen (one line).
+panel_button_tip,Switch between DOOM and the Tablet's usual screen
+# Shown in the DOOM screen when no WAD is in the mod's data folder: two sentences, \n between them. A box with the folder's path follows right below, so the second sentence ends with a colon.
+panel_no_wad,No WAD found.\nPut one in this folder, then press DOOM again:
+# Drawn over the last DOOM frame while DOOM is paused (it lost focus): a short call to action.
+panel_paused,Click to continue
+# Shown when DOOM stopped because of an error: two sentences, \n between them. A box with the path of the game's log file (Player.log) follows right below.
+panel_error,DOOM stopped because of an error.\nDetails are in this file:
+# A small button under the path box: copies the path to the clipboard. Keep it short.
+panel_copy_path,Copy path
+# The same button's text for 2 seconds after it was pressed. Keep it short.
+panel_copied,Copied

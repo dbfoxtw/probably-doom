@@ -1,0 +1,16 @@
+# Probably DOOM, French (fr): this mod's text (ModHelper.GetLocalized, picked by mod/src/Loc.cs). Translated from en.csv with AI help, not checked by a native speaker.
+# Same keys and order as en.csv (see its comments for where each text appears and how much space there is). Format: key,value (\n = line break).
+cfg_wad,WAD
+cfg_wad_tip,Le WAD à lancer quand le dossier de données du mod en contient plusieurs.\nAuto = DOOM2, DOOM, DOOM1, puis Freedoom.\nLes nouveaux fichiers WAD apparaissent ici après un redémarrage du jeu.
+cfg_resolution,Résolution
+cfg_resolution_tip,La résolution de l'écran de DOOM.\n640x400 = plus net.\n320x200 = les gros pixels d'origine.\nPrend effet après un redémarrage du jeu.
+cfg_tablet_screen,Afficher DOOM sur la tablette elle-même
+cfg_tablet_screen_tip,"Pendant que vous jouez, la tablette posée sur le bureau affiche une petite copie de l'écran de DOOM."
+cfg_mute_game_music,Couper la musique et le son ambiant du jeu en jouant
+cfg_mute_game_music_tip,"Pendant que vous jouez à DOOM, le son ambiant du jeu et le lecteur cassette sont coupés.\nIls reviennent quand DOOM se met en pause."
+panel_button_tip,Basculer entre DOOM et l'écran habituel de la tablette
+panel_no_wad,Aucun WAD trouvé.\nPlacez-en un dans ce dossier, puis appuyez de nouveau sur DOOM :
+panel_paused,Cliquez pour continuer
+panel_error,DOOM s'est arrêté à cause d'une erreur.\nLes détails se trouvent dans ce fichier :
+panel_copy_path,Copier le chemin
+panel_copied,Copié

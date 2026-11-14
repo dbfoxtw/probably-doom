@@ -1,0 +1,20 @@
+# Japanese (ja) text of Probably DOOM's settings window and Tablet screen (read by ModHelper.GetLocalized). Translated from en.csv with AI help; not checked by a native speaker.
+# Format: key,value. \n is a line break. Keys and order are the same as en.csv. panel_no_wad and panel_error only wrap after 、 (the mod keeps each part on one line).
+#
+# Settings window (gear on the main menu's Mods screen)
+cfg_wad,WAD
+cfg_wad_tip,MODのデータフォルダにWADが複数あるとき、どれを遊ぶか。\nAuto＝DOOM2、DOOM、DOOM1、Freedoomの順に選ぶ。\n新しく入れたWADファイルは、ゲームの再起動後にここに表示される。
+cfg_resolution,解像度
+cfg_resolution_tip,DOOMの画面の解像度。\n640x400＝より鮮明。\n320x200＝オリジナルの粗いドット。\nゲームの再起動後に反映される。
+cfg_tablet_screen,タブレット本体にもDOOMを表示
+cfg_tablet_screen_tip,プレイ中は、机の上のタブレットにもDOOMの画面が小さく映る。
+cfg_mute_game_music,プレイ中はゲームのBGMと背景の音をミュート
+cfg_mute_game_music_tip,DOOMのプレイ中は、ゲームの背景の音とカセットプレイヤーがミュートされる。\nDOOMが一時停止すると元に戻る。
+#
+# The store's Tablet window
+panel_button_tip,DOOMとタブレットの通常の画面を切り替える
+panel_no_wad,WADが見つかりません。\nこのフォルダにWADを入れて、もう一度DOOMを押してください：
+panel_paused,クリックで再開
+panel_error,エラーのため、DOOMが停止しました。\n詳細は、このファイルにあります：
+panel_copy_path,パスをコピー
+panel_copied,コピー済み

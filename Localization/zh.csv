@@ -1,4 +1,7 @@
-# 这个 mod 设置窗口的标签和说明（ModHelper.GetLocalized；游戏的中文语系代码是 zh，只有简体，繁体由繁中 mod 显示时转换）。格式：key,值（\n 换行）。下拉的选项（Auto、WAD 文件名、640x400、320x200）照原样显示，不翻译。
+# 这个 mod 的文字（ModHelper.GetLocalized，由 mod/src/Loc.cs 挑）。游戏的中文语系代码是 zh，只有简体；繁中 mod 在跑时改用手写的 zh-Hant.csv。格式：key,值（\n 换行），key 与顺序同 en.csv。
+# 下拉的选项（Auto、WAD 文件名、640x400、320x200）照原样显示，不翻译。DOOM 本身的菜单与消息不在这里。
+#
+# 设置窗口的标签与说明
 cfg_wad,WAD
 cfg_wad_tip,ModData 文件夹里有好几个 WAD 时玩哪一个。\nAuto（自动）＝依次选 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重启游戏才会出现在这里。
 cfg_resolution,分辨率
@@ -7,3 +10,11 @@ cfg_tablet_screen,平板电脑本体也显示画面
 cfg_tablet_screen_tip,玩的时候，桌上那台平板电脑也跟着播小画面。
 cfg_mute_game_music,玩的时候游戏的音乐和环境音静音
 cfg_mute_game_music_tip,玩 DOOM 的时候，店里的环境音和磁带播放器静音。\nDOOM 暂停时恢复。
+#
+# 店里的平板电脑（交易面板）：DOOM 按钮的提示框、没有 WAD、暂停、出错、复制路径
+panel_button_tip,在 DOOM 和平板电脑原本的画面之间切换
+panel_no_wad,找不到 WAD。\n放一个进这个文件夹，再按一次 DOOM：
+panel_paused,点击继续
+panel_error,DOOM 出错停止了。\n详情写在这个文件里：
+panel_copy_path,复制路径
+panel_copied,已复制

@@ -47,7 +47,10 @@ namespace ProbablyDoom
         /// <summary>Shutdown 跑過了（mod 被停掉）：之後什麼都不做。</summary>
         bool _shutDown;
 
-        Strings _strings = Strings.En;
+        /// <summary>交易面板的字。第一次 UpdateLanguage 之前先放 key 本身（不會是 null，提示框與說明不用另外判斷）。</summary>
+        Strings _strings = Strings.Build(k => k, "", false);
+        /// <summary>建 _strings 時的（語系代碼、繁中 mod 有沒有跑、最長字串模式）；null＝還沒建出定案的字（mod 的 csv 還沒讀到）。</summary>
+        string _langSignature;
         float _nextLangCheck;
         /// <summary>說明畫面的路徑框（DataPaths.Display 的寫法），第一次要用時才算、之後照用（路徑在遊戲執行中不會變）。</summary>
         string _noWadPath, _logPath;
@@ -274,14 +277,27 @@ namespace ProbablyDoom
             if (_tabletScreen != null) _tabletScreen.SetVisible(_focused && _doomMode && _session.Running);
         }
 
-        /// <summary>語言（每秒看一次就好）：遊戲語言或繁中 mod 變了就換字。</summary>
+        /// <summary>
+        /// 語言（每秒看一次就好）：遊戲語言、繁中 mod 有沒有跑、最長字串模式（Loc.Get 挑字看的三件事）變了，就從 csv 重建一份 Strings。
+        /// 交易面板的說明看到 Strings 換了就重建（TabletPanel.SyncMessage 比參照），DOOM 按鈕的提示框每次顯示時讀 _strings。
+        /// mod 的 csv 有沒有讀到（Loc.Ready）也算進簽章：還沒讀到時建出來的是 key，照樣先用；讀到之後簽章變了，自動重建一次。
+        /// 不把「沒讀到」當成「不記簽章」：那樣 csv 一直讀不到（mod 資料夾少了 Localization）時會每秒重建，說明畫面跟著每秒重排、
+        /// 「已複製」也會被提前改回「複製路徑」（2026-11-15 審查）。
+        /// </summary>
         void UpdateLanguage(bool force)
         {
             if (!force && Time.unscaledTime < _nextLangCheck) return;
             _nextLangCheck = Time.unscaledTime + 1f;
-            var s = Strings.For(Strings.PickLang(GameInfo.LocaleCode(), GameInfo.ZhHantModRunning()));
-            if (s == _strings) return;
-            _strings = s; // 交易面板的說明看到 Strings 換了就重建（TabletPanel.SyncMessage）
+            var code = GameInfo.LocaleCode();
+            var longest = Loc.Longest;
+            var ready = Loc.Ready;
+            // 繁中 mod 只在中文時影響挑字（LocPick.UseZhHant），其他語言不用去翻 mod 清單
+            var zhHant = code.StartsWith("zh", StringComparison.Ordinal) && GameInfo.ZhHantModRunning();
+            var signature = code + "|" + (zhHant ? "zh-Hant" : "") + "|" + (longest ? "longest" : "") + "|" + (ready ? "" : "pending");
+            if (signature == _langSignature) return;
+            _strings = Strings.Build(k => Loc.Get(k), code, longest);
+            _langSignature = signature;
+            ProbablyDoomMod.DebugLog($"交易面板的字換成：{signature}");
         }
 
         /// <summary>除錯模式：每 10 秒一行（有跑 tic 或焦點有變時才寫，閒著不洗版）。</summary>

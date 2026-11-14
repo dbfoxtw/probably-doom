@@ -1,0 +1,20 @@
+# Probably DOOM: texts of the Tablet screen and the settings window, Polish (AI translation from en.csv, not checked by a native speaker). Format: key,value (\n = line break)
+# Keys and order are the same as in en.csv; where each text appears and how much space it has: see the comments in en.csv.
+#
+# Settings window (gear on the main menu's Mods screen): labels and tooltips.
+cfg_wad,WAD
+cfg_wad_tip,Który plik WAD uruchomić, gdy w folderze danych moda jest ich więcej niż jeden.\nAuto = DOOM2, DOOM, DOOM1, potem Freedoom.\nNowe pliki WAD pojawiają się tu po ponownym uruchomieniu gry.
+cfg_resolution,Rozdzielczość
+cfg_resolution_tip,Rozdzielczość ekranu DOOM.\n640x400 = ostrzejszy obraz.\n320x200 = oryginalne, kanciaste piksele.\nZmiana działa po ponownym uruchomieniu gry.
+cfg_tablet_screen,Pokazuj DOOM także na samym tablecie
+cfg_tablet_screen_tip,Gdy grasz, tablet na biurku pokazuje małą kopię ekranu DOOM.
+cfg_mute_game_music,Wyciszaj muzykę i dźwięk tła gry podczas grania
+cfg_mute_game_music_tip,Gdy grasz w DOOM, dźwięk tła gry i odtwarzacz kaset są wyciszone.\nWracają, gdy DOOM zostanie wstrzymany.
+#
+# The store's Tablet window. DOOM is the name of the button and is never translated.
+panel_button_tip,Przełącz między grą DOOM a zwykłym ekranem tabletu
+panel_no_wad,Nie znaleziono pliku WAD.\nUmieść plik WAD w tym folderze i naciśnij DOOM jeszcze raz:
+panel_paused,Kliknij, aby kontynuować
+panel_error,DOOM zatrzymał się z powodu błędu.\nSzczegóły znajdziesz w tym pliku:
+panel_copy_path,Kopiuj ścieżkę
+panel_copied,Skopiowano

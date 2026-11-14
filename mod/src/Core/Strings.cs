@@ -15,13 +15,11 @@ using System;
 
 namespace ProbablyDoom
 {
-    internal enum Lang { En, ZhHans, ZhHant }
-
     /// <summary>
     /// mod 自己在交易面板上顯示的字（DOOM 按鈕的提示框、Doom 畫面區的說明）。不碰 Unity，離線測試測同一份。
-    /// 設定視窗的標籤與說明不在這裡，在 mod 資料夾的 Localization\en.csv、zh.csv（遊戲的 ModHelper.GetLocalized）。
+    /// 字都在 mod 的 Localization\*.csv（panel_ 開頭的 key，需求.md 決定 34），由 Loc.Get 挑語言（DoomRunner.UpdateLanguage 傳進來）；
+    /// 這裡只決定哪個欄位用哪個 key、說明文字在哪些字後面換行。設定視窗的標籤與說明也在同一批 csv（cfg_ 開頭，Settings.cs）。
     /// 英文只用 ASCII：正式版的英文字型缺很多符號（→、× 會變成空白；根目錄 docs/官方格式寫法.md）。
-    /// 繁中字串本身沒有簡體字，繁中 mod 的轉換會直接跳過。
     /// </summary>
     internal sealed class Strings
     {
@@ -41,56 +39,41 @@ namespace ProbablyDoom
         /// <summary>按了「複製路徑」之後按鈕的字（2 秒）。</summary>
         internal string Copied;
         /// <summary>
-        /// 中文：說明文字只在「，」後面換行（TextMarkup.Sentences 用 &lt;nobr&gt; 包每一段）。英文照空白換，不用包。
+        /// 說明文字只在這些字後面換行（TextMarkup.Sentences 用 &lt;nobr&gt; 包每一段）；空字串就照原樣，TMP 照空白換。
+        /// 見 <see cref="BreakAfterFor"/>。
         /// </summary>
-        internal bool Cjk;
+        internal string BreakAfter = "";
 
-        internal static readonly Strings En = new Strings
-        {
-            ButtonTooltip = "Switch between DOOM and the Tablet's usual screen",
-            NoWad = "No WAD found.\nPut one in this folder, then press DOOM again:",
-            Paused = "Click to continue",
-            Error = "DOOM stopped because of an error.\nDetails are in this file:",
-            CopyPath = "Copy path",
-            Copied = "Copied",
-        };
-
-        internal static readonly Strings ZhHans = new Strings
-        {
-            ButtonTooltip = "在 DOOM 和平板电脑原本的画面之间切换",
-            NoWad = "找不到 WAD。\n放一个进这个文件夹，再按一次 DOOM：",
-            Paused = "点击继续",
-            Error = "DOOM 出错停止了。\n详情写在这个文件里：",
-            CopyPath = "复制路径",
-            Copied = "已复制",
-            Cjk = true,
-        };
-
-        internal static readonly Strings ZhHant = new Strings
-        {
-            ButtonTooltip = "在 DOOM 和平板電腦原本的畫面之間切換",
-            NoWad = "找不到 WAD。\n放一個進這個資料夾，再按一次 DOOM：",
-            Paused = "點一下繼續",
-            Error = "DOOM 出錯停止了。\n詳情寫在這個檔案：",
-            CopyPath = "複製路徑",
-            Copied = "已複製",
-            Cjk = true,
-        };
-
-        internal static Strings For(Lang lang) => lang == Lang.ZhHant ? ZhHant : lang == Lang.ZhHans ? ZhHans : En;
-
-        internal static Strings[] All => new[] { En, ZhHans, ZhHant };
+        /// <summary>中文：只在「，」後面換行（TMP 的中文每個字後面都能換，會把「DOOM：」「詳情」拆開）。</summary>
+        internal const string ZhBreaks = "，";
+        /// <summary>日文：只在「、」「。」後面換行（日文和中文一樣沒有空白，TMP 每個字後面都能換）。</summary>
+        internal const string JaBreaks = "、。";
 
         /// <summary>
-        /// 用哪個語言（照我們其他 mod 的 GameState.DetectLanguage）：遊戲只有一個中文語系 zh（簡中），繁體是繁中 mod 在顯示時轉出來的，
-        /// 所以遊戲語言是中文時，繁中 mod 在跑就用繁中、沒有就用簡中；其他語言（俄、德、日…）用英文。
-        /// 遊戲語言不是中文時不用繁中：英文介面的字型沒有中文字。
+        /// 照遊戲的語系代碼建一份：get 取 csv 的字（mod 裡是 Loc.Get，離線測試傳假的），localeCode 定說明文字的換行方式。
+        /// longest（最長字串模式）拿到的是西文，不照中文、日文的標點換行。
         /// </summary>
-        internal static Lang PickLang(string localeCode, bool zhHantModRunning)
+        internal static Strings Build(Func<string, string> get, string localeCode, bool longest) => new Strings
         {
-            if (localeCode != null && localeCode.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
-                return zhHantModRunning ? Lang.ZhHant : Lang.ZhHans;
-            return Lang.En;
+            ButtonTooltip = get("panel_button_tip"),
+            NoWad = get("panel_no_wad"),
+            Paused = get("panel_paused"),
+            Error = get("panel_error"),
+            CopyPath = get("panel_copy_path"),
+            Copied = get("panel_copied"),
+            BreakAfter = BreakAfterFor(localeCode, longest),
+        };
+
+        /// <summary>
+        /// 說明文字在哪些字後面換行：zh 開頭（簡中，繁中 mod 有跑時是手寫的繁中，語系代碼一樣是 zh）→「，」；ja →「、」「。」；
+        /// 其他語言、還沒初始化（空字串）、最長字串模式 → 不處理（西文照空白換行）。
+        /// </summary>
+        internal static string BreakAfterFor(string localeCode, bool longest)
+        {
+            if (longest || string.IsNullOrEmpty(localeCode)) return "";
+            if (localeCode.StartsWith("zh", StringComparison.OrdinalIgnoreCase)) return ZhBreaks;
+            if (localeCode.StartsWith("ja", StringComparison.OrdinalIgnoreCase)) return JaBreaks;
+            return "";
         }
     }
 }
