@@ -3,13 +3,13 @@
 #
 # 設定視窗的標籤與說明
 cfg_wad,WAD
-cfg_wad_tip,ModData 資料夾裡有好幾個 WAD 時玩哪一個。\nAuto（自動）＝依序選 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重開遊戲才會出現在這裡。
+cfg_wad_tip,ModData 裡有多個 WAD 時玩哪一個。\nAuto（自動）＝依序選 DOOM2、DOOM、DOOM1、Freedoom。\n新放的 WAD 要重開遊戲才會出現在這裡。
 cfg_resolution,解析度
-cfg_resolution_tip,DOOM 畫面的解析度。\n640x400＝比較清楚。\n320x200＝原版的粗像素。\n重開遊戲後生效。
+cfg_resolution_tip,DOOM 畫面的解析度。\n640x400＝比較清楚。\n320x200＝跟原版一樣的粗像素。\n重開遊戲後生效。
 cfg_tablet_screen,平板電腦本體也顯示畫面
-cfg_tablet_screen_tip,玩的時候，桌上那台平板電腦也跟著播小畫面。
+cfg_tablet_screen_tip,玩的時候，\n桌上那台平板電腦也跟著播小畫面。
 cfg_mute_game_music,玩的時候遊戲的音樂和環境音靜音
-cfg_mute_game_music_tip,玩 DOOM 的時候，店裡的環境音和卡帶播放器靜音。\nDOOM 暫停時恢復。
+cfg_mute_game_music_tip,玩 DOOM 的時候，\n店裡的環境音和卡帶播放器靜音。\nDOOM 暫停時恢復。
 #
 # 店裡的平板電腦（交易面板）：DOOM 按鈕的提示框、沒有 WAD、暫停、出錯、複製路徑
 panel_button_tip,在 DOOM 和平板電腦原本的畫面之間切換
